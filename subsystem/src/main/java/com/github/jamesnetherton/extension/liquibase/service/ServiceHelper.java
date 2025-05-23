@@ -44,7 +44,7 @@ import java.net.UnknownHostException;
  */
 import liquibase.util.NetUtil;
 import org.jboss.as.controller.OperationContext;
-import org.jboss.msc.service.AbstractService;
+import org.jboss.msc.service.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -52,7 +52,7 @@ import org.jboss.msc.service.ServiceTarget;
 
 public final class ServiceHelper {
 
-    public static void installService(ServiceName serviceName, ServiceTarget serviceTarget, AbstractService<?> service) {
+    public static void installService(ServiceName serviceName, ServiceTarget serviceTarget, Service<?> service) {
         ServiceBuilder<?> builder = serviceTarget.addService(serviceName, service);
         builder.install();
     }
