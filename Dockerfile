@@ -1,4 +1,4 @@
-FROM jamesnetherton/wildfly:24.0.0.Final
+FROM jamesnetherton/wildfly:28.0.0.Final
 
 ARG WILDFLY_LIQUIBASE_VERSION
 

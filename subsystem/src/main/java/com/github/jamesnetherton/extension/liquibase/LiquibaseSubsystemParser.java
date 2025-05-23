@@ -117,7 +117,7 @@ final class LiquibaseSubsystemParser implements Namespace10, XMLStreamConstants,
             throw missingRequired(reader, Collections.singleton(Attribute.DATASOURCE));
         }
 
-        StringBuffer content = new StringBuffer();
+        StringBuilder content = new StringBuilder();
         while (reader.hasNext() && reader.next() != END_ELEMENT) {
             switch (reader.getEventType()) {
                 case CHARACTERS:

@@ -30,7 +30,6 @@ import com.github.jamesnetherton.extension.liquibase.resource.VFSResourceAccesso
 import com.github.jamesnetherton.extension.liquibase.resource.WildFlyCompositeResourceAccessor;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,7 +38,7 @@ import liquibase.changelog.ChangeLogParameters;
 import liquibase.changelog.DatabaseChangeLog;
 import liquibase.exception.ChangeLogParseException;
 import liquibase.parser.ChangeLogParser;
-import liquibase.resource.FileSystemResourceAccessor;
+import liquibase.resource.DirectoryResourceAccessor;
 import org.jboss.as.ee.structure.DeploymentType;
 import org.jboss.as.ee.structure.DeploymentTypeMarker;
 import org.jboss.as.server.deployment.Attachments;
@@ -103,7 +102,7 @@ public class LiquibaseChangeLogParseProcessor implements DeploymentUnitProcessor
 
             for (VirtualFile virtualFile : changeLogFiles) {
                 File file = virtualFile.getPhysicalFile();
-                String changeLogDefinition = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+                String changeLogDefinition = Files.readString(file.toPath());
                 String dataSource = parseDataSource(virtualFile, deploymentUnit.getName(), module.getClassLoader());
 
                 Builder builder;
@@ -143,8 +142,8 @@ public class LiquibaseChangeLogParseProcessor implements DeploymentUnitProcessor
         try {
             Thread.currentThread().setContextClassLoader(classLoader);
 
-            File[] basePaths = new File[] { new File(file.getPhysicalFile().getParent()) };
-            FileSystemResourceAccessor fileSystemResourceAccessor = new FileSystemResourceAccessor(basePaths);
+            File basePath = new File(file.getPhysicalFile().getParent());
+            DirectoryResourceAccessor fileSystemResourceAccessor = new DirectoryResourceAccessor(basePath);
 
             ChangeLogConfiguration configuration = new ChangeLogConfiguration();
             configuration.setName(file.getName());

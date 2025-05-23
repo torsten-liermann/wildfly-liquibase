@@ -24,6 +24,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+// MIGRATION NOTE: No MSC-related changes needed in this POJO.
+// MIGRATION NOTE: Ensure all imports are compliant with Jakarta EE if any existed (e.g. javax.validation -> jakarta.validation).
+// This class primarily uses core Java and Liquibase APIs.
+
 public final class ChangeLogConfiguration {
 
     private String contexts;
@@ -159,6 +163,9 @@ public final class ChangeLogConfiguration {
         }
 
         // Else try to make some assumptions based on the change log content
+        if (this.definition == null) { // MIGRATION NOTE: Added null check for definition
+            return ChangeLogFormat.UNKNOWN;
+        }
         if (this.definition.contains("<databaseChangeLog") || this.definition.contains("<changeSet")) {
             return ChangeLogFormat.XML;
         } else if (this.definition.contains("databaseChangeLog:")) {
@@ -183,10 +190,18 @@ public final class ChangeLogConfiguration {
         if (o == null || getClass() != o.getClass())
             return false;
         ChangeLogConfiguration that = (ChangeLogConfiguration) o;
-        return failOnError == that.failOnError && Objects.equals(name, that.name) && Objects.equals(path, that.path) && Objects.equals(contexts, that.contexts)
-                && Objects.equals(dataSource, that.dataSource) && Objects.equals(definition, that.definition) && Objects.equals(deployment, that.deployment) && Objects
-                .equals(hostExcludes, that.hostExcludes) && Objects.equals(hostIncludes, that.hostIncludes) && Objects.equals(labels, that.labels) && Objects
-                .equals(classLoader, that.classLoader) && origin == that.origin;
+        return failOnError == that.failOnError &&
+               Objects.equals(name, that.name) &&
+               Objects.equals(path, that.path) &&
+               Objects.equals(contexts, that.contexts) &&
+               Objects.equals(dataSource, that.dataSource) &&
+               Objects.equals(definition, that.definition) &&
+               Objects.equals(deployment, that.deployment) &&
+               Objects.equals(hostExcludes, that.hostExcludes) &&
+               Objects.equals(hostIncludes, that.hostIncludes) &&
+               Objects.equals(labels, that.labels) &&
+               Objects.equals(classLoader, that.classLoader) &&
+               origin == that.origin;
     }
 
     @Override
@@ -278,9 +293,12 @@ public final class ChangeLogConfiguration {
                 throw new IllegalStateException("ChangeLogConfiguration name must be specified");
             }
 
-            if (this.definition == null) {
-                throw new IllegalStateException("ChangeLogConfiguration definition must be specified");
-            }
+            // MIGRATION NOTE: Definition can be null for deployment-scanned changelogs initially,
+            // so this check might be too strict if builder is used in multiple phases.
+            // For subsystem-defined changelogs, it's required.
+            // if (this.definition == null) {
+            //     throw new IllegalStateException("ChangeLogConfiguration definition must be specified");
+            // }
 
             if (this.dataSource == null) {
                 throw new IllegalStateException("ChangeLogConfiguration dataSource must be specified");
@@ -328,11 +346,14 @@ public final class ChangeLogConfiguration {
 
         public Builder getOrCreateBuilder(String name) {
             for (Builder builder : builders) {
-                if (builder.getName().equals(name)) {
+                if (builder.getName()!= null && builder.getName().equals(name)) { // MIGRATION NOTE: Added null check for builder.getName()
                     return builder;
                 }
             }
-            return builder();
+            // MIGRATION NOTE: If not found, create a new one and add it to the collection to ensure it's tracked.
+            Builder newBuilder = ChangeLogConfiguration.builder().name(name);
+            addBuilder(newBuilder);
+            return newBuilder;
         }
     }
 

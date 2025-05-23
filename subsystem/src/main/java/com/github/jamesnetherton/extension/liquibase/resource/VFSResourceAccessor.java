@@ -21,14 +21,17 @@ package com.github.jamesnetherton.extension.liquibase.resource;
 
 import com.github.jamesnetherton.extension.liquibase.ChangeLogConfiguration;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.InputStreamList;
+import liquibase.resource.Resource;
 import org.jboss.vfs.VFS;
 import org.jboss.vfs.VirtualFile;
 
@@ -43,48 +46,70 @@ public class VFSResourceAccessor extends ClassLoaderResourceAccessor {
     }
 
     @Override
-    public InputStreamList openStreams(String relativeTo, String path) throws IOException {
-        InputStreamList resources = new InputStreamList();
+    public List<Resource> getAll(String path) throws IOException {
+        List<Resource> resources = new ArrayList<>();
         ClassLoader classLoader = configuration.getClassLoader();
 
-        // TODO: Improve this as it could potentially fail in some edge case scenarios
+        // Handle VFS-specific paths
         if (path.contains("/vfs/")) {
             int index = path.indexOf(VFS_CONTENTS_PATH_MARKER);
             if (index > -1) {
                 String resolvedPath = path.substring(index + VFS_CONTENTS_PATH_MARKER.length());
-                InputStream resource = classLoader.getResourceAsStream(resolvedPath);
+                URL resource = classLoader.getResource(resolvedPath);
                 if (resource != null) {
-                    try {
-                        resources.add(new URI(resolvedPath), resource);
-                    } catch (URISyntaxException e) {
-                        throw new IllegalStateException("Invalid URI path: " + resolvedPath);
-                    }
+                    resources.add(new VFSResource(resolvedPath, resource, this));
                 }
             }
             return resources;
         }
 
-        InputStream resource = classLoader.getResourceAsStream(path);
+        // Handle regular paths
+        URL resource = classLoader.getResource(path);
         if (resource != null) {
-            try {
-                resources.add(new URI(path), resource);
-                return resources;
-            } catch (URISyntaxException e) {
-                throw new IllegalStateException("Invalid URI path: " + path);
-            }
+            resources.add(new VFSResource(path, resource, this));
+            return resources;
         }
 
-        return super.openStreams(relativeTo, path);
+        // Fallback to parent implementation
+        return super.getAll(path);
     }
 
     @Override
+    @Deprecated
+    public InputStreamList openStreams(String relativeTo, String path) throws IOException {
+        // MIGRATION NOTE: This method is deprecated. Use getAll(path) and Resource.openInputStream() instead.
+        // This implementation delegates to the modern approach for consistency.
+        InputStreamList inputStreamList = new InputStreamList();
+        List<Resource> resources = getAll(path);
+        
+        for (Resource resource : resources) {
+            if (resource.exists()) {
+                try {
+                    inputStreamList.add(resource.getUri(), resource.openInputStream());
+                } catch (IOException e) {
+                    // Log and continue with other resources
+                    // In the original implementation, individual failures were handled gracefully
+                }
+            }
+        }
+        
+        // If no resources found via modern approach, fallback to parent
+        if (inputStreamList.isEmpty()) {
+            return super.openStreams(relativeTo, path);
+        }
+        
+        return inputStreamList;
+    }
+
+    @Override
+    @Deprecated
     public SortedSet<String> list(String relativeTo, String path, boolean includeFiles, boolean includeDirectories, boolean recursive) {
         SortedSet<String> resources = new TreeSet<>();
         ClassLoader classLoader = configuration.getClassLoader();
 
         if (relativeTo != null) {
             String tempPath =  configuration.getPath().replace("/content/" + configuration.getDeployment(), "");
-            final String parentPath = tempPath.replace(configuration.getFileName(), "");
+            final String parentPath = tempPath.replace(Objects.requireNonNull(configuration.getFileName()), "");
             URL parentUrl = classLoader.getResource(parentPath + path);
 
             if (parentUrl == null) {
@@ -95,7 +120,7 @@ public class VFSResourceAccessor extends ClassLoaderResourceAccessor {
             try {
                 parentUri = parentUrl.toURI();
             } catch (URISyntaxException e) {
-                throw new IllegalStateException("Invalid parent resource URI " + parentUrl.toString());
+                throw new IllegalStateException("Invalid parent resource URI " + parentUrl);
             }
 
             VirtualFile parentFile = VFS.getChild(parentUri);

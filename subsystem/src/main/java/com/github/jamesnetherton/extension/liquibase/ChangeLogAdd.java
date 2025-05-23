@@ -41,12 +41,14 @@ final class ChangeLogAdd extends AbstractAddStepHandler {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         ChangeLogModelService service = ServiceHelper.getChangeLogModelUpdateService(context);
         service.createChangeLogModel(context, operation, model);
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
         super.rollbackRuntime(context, operation, resource);
         ChangeLogModelService service = ServiceHelper.getChangeLogModelUpdateService(context);

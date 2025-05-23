@@ -20,7 +20,6 @@
 package com.github.jamesnetherton.extension.liquibase.deployment;
 
 import java.util.List;
-import org.jboss.as.ee.weld.WeldDeploymentMarker;
 import org.jboss.as.server.deployment.Attachments;
 import org.jboss.as.server.deployment.DeploymentPhaseContext;
 import org.jboss.as.server.deployment.DeploymentUnit;
@@ -30,9 +29,9 @@ import org.jboss.as.server.deployment.annotation.CompositeIndex;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
+import org.jboss.as.weld._private.WeldDeploymentMarker;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.DotName;
-import org.jboss.modules.ModuleIdentifier;
 
 /**
  * {@link DeploymentUnitProcessor} which adds Liquibase module dependencies to the deployment
@@ -51,15 +50,16 @@ public class LiquibaseDependenciesProcessor implements DeploymentUnitProcessor{
         ServiceModuleLoader moduleLoader = deploymentUnit.getAttachment(Attachments.SERVICE_MODULE_LOADER);
         ModuleSpecification moduleSpec = deploymentUnit.getAttachment(Attachments.MODULE_SPECIFICATION);
 
-        ModuleIdentifier liquibaseCore = ModuleIdentifier.fromString(MODULE_LIQUIBASE_CORE);
-        moduleSpec.addUserDependency(new ModuleDependency(moduleLoader, liquibaseCore, false, true, true, true));
+        // MIGRATION NOTE: Replace deprecated ModuleIdentifier.create() with string-based constructor
+        ModuleDependency liquibaseCoreDep = new ModuleDependency(moduleLoader, MODULE_LIQUIBASE_CORE, false, true, true, true);
+        moduleSpec.addUserDependency(liquibaseCoreDep);
 
         CompositeIndex index = deploymentUnit.getAttachment(Attachments.COMPOSITE_ANNOTATION_INDEX);
         List<AnnotationInstance> annotations = index.getAnnotations(DotName.createSimple(LIQUIBASE_TYPE));
 
         if (WeldDeploymentMarker.isPartOfWeldDeployment(deploymentUnit) && !annotations.isEmpty()) {
-            ModuleIdentifier liquibaseCdi = ModuleIdentifier.fromString(MODULE_LIQUIBASE_CDI);
-            moduleSpec.addUserDependency(new ModuleDependency(moduleLoader, liquibaseCdi, false, true, true, true));
+            ModuleDependency liquibaseCdiDep = new ModuleDependency(moduleLoader, MODULE_LIQUIBASE_CDI, false, true, true, true);
+            moduleSpec.addUserDependency(liquibaseCdiDep);
         }
     }
 

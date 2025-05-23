@@ -34,37 +34,26 @@ import liquibase.Liquibase;
 import liquibase.database.jvm.JdbcConnection;
 import liquibase.exception.DatabaseException;
 import liquibase.exception.LiquibaseException;
+import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.CompositeResourceAccessor;
-import liquibase.resource.FileSystemResourceAccessor;
 import liquibase.resource.ResourceAccessor;
-import org.jboss.msc.service.AbstractService;
 import org.jboss.msc.service.ServiceName;
-import org.jboss.msc.service.StartContext;
-import org.jboss.msc.service.StartException;
 
 /**
- * Service which executes a Liquibase change log based on the provided {@link ChangeLogConfiguration}.
+ * Utility class for Liquibase change log execution.
+ * MIGRATION NOTE: Completely removed Service interface - now uses lambda-based service registration
  */
-public final class ChangeLogExecutionService extends AbstractService<ChangeLogExecutionService> {
+public final class ChangeLogExecutionService {
 
     private static final AtomicInteger COUNTER = new AtomicInteger();
-    private final ChangeLogConfiguration configuration;
 
-    public ChangeLogExecutionService(ChangeLogConfiguration configuration) {
-        this.configuration = configuration;
+    // MIGRATION NOTE: Private constructor - this is now a utility class
+    private ChangeLogExecutionService() {
+        // Utility class
     }
 
-    @Override
-    public void start(StartContext context) throws StartException {
-        executeChangeLog(configuration);
-    }
-
-    @Override
-    public ChangeLogExecutionService getValue() throws IllegalStateException {
-        return this;
-    }
-
-    public void executeChangeLog(ChangeLogConfiguration configuration) {
+    // MIGRATION NOTE: Keep static method for direct usage and instance method for service
+    public static void executeChangeLog(ChangeLogConfiguration configuration) {
         if (!ServiceHelper.isChangeLogExecutable(configuration)) {
             LiquibaseLogger.ROOT_LOGGER.info("Not executing changelog {} as host-excludes or host-includes rules did not apply to this server host", configuration.getFileName());
             return;
@@ -75,7 +64,7 @@ public final class ChangeLogExecutionService extends AbstractService<ChangeLogEx
 
         final ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
         try {
-            ResourceAccessor resourceAccessor = new CompositeResourceAccessor(new FileSystemResourceAccessor(), new WildFlyResourceAccessor(configuration));
+            ResourceAccessor resourceAccessor = new CompositeResourceAccessor(new ClassLoaderResourceAccessor(configuration.getClassLoader()), new WildFlyResourceAccessor(configuration));
 
             InitialContext initialContext = new InitialContext();
             DataSource datasource = (DataSource) initialContext.lookup(configuration.getDataSource());
@@ -84,7 +73,7 @@ public final class ChangeLogExecutionService extends AbstractService<ChangeLogEx
             Contexts contexts = new Contexts(configuration.getContexts());
             LabelExpression labelExpression = new LabelExpression(configuration.getLabels());
 
-            LiquibaseLogger.ROOT_LOGGER.info(String.format("Starting execution of %s changelog %s", configuration.getOrigin(), configuration.getFileName()));
+            LiquibaseLogger.ROOT_LOGGER.info("Starting execution of {} changelog {}", configuration.getOrigin(), configuration.getFileName());
             Thread.currentThread().setContextClassLoader(configuration.getClassLoader());
             liquibase = new Liquibase(configuration.getFileName(), resourceAccessor, connection);
             liquibase.update(contexts, labelExpression);

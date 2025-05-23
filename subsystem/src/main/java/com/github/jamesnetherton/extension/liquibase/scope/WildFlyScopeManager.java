@@ -35,7 +35,7 @@ import org.jboss.modules.ModuleClassLoader;
 
 /**
  * Custom scope manager to get and set a Liquibase {@link Scope}, bound to the thread executing the change log update.
- *
+ * <p/>
  * This is required since Liquibase does not handle concurrent changelog executions within the same JVM. Therefore scopes
  * are vulnerable to being overwritten by competing threads.
  */

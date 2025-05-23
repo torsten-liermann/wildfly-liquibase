@@ -62,7 +62,7 @@ public enum ChangeLogFormat {
     }
 
     public static ChangeLogFormat fromFileName(String fileName) {
-        if (fileName == null || fileName.length() == 0) {
+        if (fileName == null || fileName.isEmpty()) {
             throw new IllegalArgumentException("File name must not be null or empty");
         }
 

@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import liquibase.resource.InputStreamList;
 
 public final class WildFlyResourceAccessor extends VFSResourceAccessor {
@@ -43,6 +44,7 @@ public final class WildFlyResourceAccessor extends VFSResourceAccessor {
     }
 
     @Override
+    @Deprecated
     public InputStreamList openStreams(String relativeTo, String path) throws IOException {
         // Prevent 'Found x copies of resource' errors
         if (path.startsWith(LIQUIBASE_XSD_PATH)) {
@@ -72,7 +74,7 @@ public final class WildFlyResourceAccessor extends VFSResourceAccessor {
                 if (resources == null || resources.isEmpty()) {
                     // Attempt to work out the 'relative to' change log path
                     String parentPath =  configuration.getPath().replace("/content/" + configuration.getDeployment(), "");
-                    parentPath = parentPath.replace(configuration.getFileName(), "");
+                    parentPath = parentPath.replace(Objects.requireNonNull(configuration.getFileName()), "");
                     resource = configuration.getClassLoader().getResourceAsStream(parentPath + path);
                     if (resource != null) {
                         resources = new InputStreamList();

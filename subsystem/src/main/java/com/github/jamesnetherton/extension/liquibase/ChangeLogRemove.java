@@ -26,11 +26,26 @@ import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.dmr.ModelNode;
 
+// MIGRATION NOTE: Similar to ChangeLogAdd, relies on ServiceHelper and ChangeLogModelService.
+// Minimal changes expected if ChangeLogModelService is correctly registered and discoverable.
 final class ChangeLogRemove extends AbstractRemoveStepHandler {
 
     @Override
+    @SuppressWarnings("deprecation")
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
+        // MIGRATION NOTE: Assumes ServiceHelper.getChangeLogModelUpdateService(context) correctly retrieves the refactored ChangeLogModelService.
+        // MIGRATION NOTE: 'model' here refers to the state of the resource *before* removal.
         ChangeLogModelService service = ServiceHelper.getChangeLogModelUpdateService(context);
+        if (service == null) {
+            throw new OperationFailedException("ChangeLogModelService not available");
+        }
+        // MIGRATION NOTE: Pass the 'model' (which represents the resource being removed) to the service method.
+        // The original code passed 'model', which is correct for remove operations as it holds the state of the resource to be removed.
         service.removeChangeLogModel(context, model);
     }
+
+    // MIGRATION NOTE: If a rollback of remove is needed (i.e., re-adding the resource), it would be implemented in recoverRuntime.
+    // The default AbstractRemoveStepHandler.recoverRuntime typically re-runs the add operation.
+    // Given this DUP only removes services, custom recovery logic might involve re-creating the model and calling createChangeLogModel.
+    // For this migration, we assume the default rollback (re-add) behavior is sufficient if not overridden.
 }

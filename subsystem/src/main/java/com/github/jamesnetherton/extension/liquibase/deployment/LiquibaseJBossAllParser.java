@@ -43,7 +43,6 @@ import com.github.jamesnetherton.extension.liquibase.ChangeLogConfiguration.Buil
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.namespace.QName;
-import javax.xml.stream.Location;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
@@ -110,7 +109,6 @@ public class LiquibaseJBossAllParser implements JBossAllXMLParser<BuilderCollect
         CHANGELOG(new QName("changelog")),
         UNKNOWN(null);
 
-        private static final Map<QName, Attribute> attributes;
 
         static {
             Map<QName, Attribute> attributesMap = new HashMap<>();
@@ -119,7 +117,6 @@ public class LiquibaseJBossAllParser implements JBossAllXMLParser<BuilderCollect
                     attributesMap.put(element.getQName(), element);
                 }
             }
-            attributes = attributesMap;
         }
 
         private final QName qname;
@@ -152,7 +149,7 @@ public class LiquibaseJBossAllParser implements JBossAllXMLParser<BuilderCollect
                             builder.contexts(parseElement(reader, builder));
                             break;
                         case FAIL_ON_ERROR:
-                            Boolean failOnError = Boolean.valueOf(parseElement(reader, builder));
+                            boolean failOnError = Boolean.parseBoolean(parseElement(reader, builder));
                             builder.failOnError(failOnError);
                         case HOST_EXCLUDES:
                             builder.hostExcludes(parseElement(reader, builder));
@@ -247,11 +244,7 @@ public class LiquibaseJBossAllParser implements JBossAllXMLParser<BuilderCollect
         return new XMLStreamException("Unexpected content kind: "+kind+" at "+reader.getLocation());
     }
 
-    private static String getAttributeValue(final XMLStreamReader reader, Attribute attribute) throws XMLStreamException {
+    private static String getAttributeValue(final XMLStreamReader reader, Attribute attribute) {
         return reader.getAttributeValue(null, attribute.getQName().getLocalPart());
-    }
-
-    private static XMLStreamException endOfDocument(final Location location) {
-        return new XMLStreamException("Expected end of document "+location);
     }
 }
