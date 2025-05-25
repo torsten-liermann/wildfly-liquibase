@@ -5,7 +5,7 @@
 
     <groupId>com.github.jamesnetherton</groupId>
     <artifactId>wildfly-liquibase</artifactId>
-    <version>2.3.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
 
     <name>wildfly-liquibase</name>
@@ -45,6 +45,7 @@
         <version.source.plugin>3.2.0</version.source.plugin>
         <version.surefire.plugin>3.0.0-M5</version.surefire.plugin>
         <version.wildfly.galleon.plugin>6.4.0.Final</version.wildfly.galleon.plugin>
+        <version.flatten.plugin>1.7.0</version.flatten.plugin>
     </properties>
 
     <scm>
@@ -346,6 +347,11 @@
                         </dependency>
                     </dependencies>
                 </plugin>
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${version.flatten.plugin}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -353,6 +359,30 @@
             <plugin>
                 <groupId>net.revelc.code</groupId>
                 <artifactId>impsort-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <configuration>
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
