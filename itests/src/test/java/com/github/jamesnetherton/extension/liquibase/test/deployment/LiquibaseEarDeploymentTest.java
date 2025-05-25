@@ -20,7 +20,7 @@
 package com.github.jamesnetherton.extension.liquibase.test.deployment;
 
 import com.github.jamesnetherton.liquibase.arquillian.LiquibaseTestSupport;
-import javax.ejb.Stateless;
+import jakarta.ejb.Stateless;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.Archive;

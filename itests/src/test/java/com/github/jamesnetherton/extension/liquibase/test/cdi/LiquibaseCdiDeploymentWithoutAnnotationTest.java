@@ -26,16 +26,11 @@ import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 @RunWith(Arquillian.class)
 public class LiquibaseCdiDeploymentWithoutAnnotationTest {
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Deployment
     public static Archive<?> deployment() {
@@ -43,9 +38,8 @@ public class LiquibaseCdiDeploymentWithoutAnnotationTest {
             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
 
-    @Test
+    @Test(expected = NoClassDefFoundError.class)
     public void testLiquibaseCdiModuleDependencyNotAdded() {
-        expected.expect(NoClassDefFoundError.class);
         new CDILiquibaseConfig();
     }
 }

@@ -17,7 +17,7 @@
   #L%
   -->
 <installation xmlns="urn:jboss:galleon:provisioning:3.0">
-    <feature-pack location="wildfly@maven(org.jboss.universe:community-universe):current">
+    <feature-pack location="wildfly-ee@maven(org.jboss.universe:community-universe):current#${version.org.wildfly}">
         <default-configs inherit="false"/>
         <packages inherit="false">
         </packages>

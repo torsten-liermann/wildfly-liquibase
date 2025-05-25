@@ -20,11 +20,11 @@
 package com.github.jamesnetherton.extension.liquibase.test.jpa.init;
 
 import com.github.jamesnetherton.liquibase.arquillian.LiquibaseTestSupport;
+import jakarta.annotation.PostConstruct;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
+import jakarta.enterprise.context.ApplicationScoped;
 import java.io.InputStream;
-import javax.annotation.PostConstruct;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
-import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 @Startup

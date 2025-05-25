@@ -146,8 +146,10 @@
                                 <configuration>
                                     <install-dir>${jboss.home}</install-dir>
                                     <provisioning-file>${project.build.testOutputDirectory}/provision.xml</provisioning-file>
+                                    <log-time>true</log-time>
                                     <plugin-options>
                                         <jboss-maven-dist>true</jboss-maven-dist>
+                                        <optional-packages>all</optional-packages>
                                         <jboss-fork-embedded>true</jboss-fork-embedded>
                                     </plugin-options>
                                 </configuration>

@@ -20,6 +20,7 @@
 package com.github.jamesnetherton.extension.liquibase.test.deployment;
 
 import com.github.jamesnetherton.liquibase.arquillian.LiquibaseTestSupport;
+import jakarta.enterprise.concurrent.ManagedExecutorService;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -28,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.naming.InitialContext;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
