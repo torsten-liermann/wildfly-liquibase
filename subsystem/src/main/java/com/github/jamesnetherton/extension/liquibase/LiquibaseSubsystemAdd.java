@@ -27,8 +27,10 @@ import com.github.jamesnetherton.extension.liquibase.deployment.LiquibaseJBossAl
 import com.github.jamesnetherton.extension.liquibase.scope.WildFlyScopeManager;
 import com.github.jamesnetherton.extension.liquibase.service.ChangeLogConfigurationRegistryService;
 import com.github.jamesnetherton.extension.liquibase.service.ChangeLogModelService;
-import com.github.jamesnetherton.extension.liquibase.service.ValueService;
-import java.util.function.Supplier; // MIGRATION NOTE: Added for Supplier
+import com.github.jamesnetherton.extension.liquibase.service.SubsystemServices;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Consumer;
 import liquibase.Liquibase;
 import liquibase.Scope;
 import org.jboss.as.controller.AbstractBoottimeAddStepHandler;
@@ -40,6 +42,7 @@ import org.jboss.as.server.deployment.DeploymentUnitProcessor;
 import org.jboss.as.server.deployment.Phase;
 import org.jboss.as.server.deployment.jbossallxml.JBossAllXmlParserRegisteringProcessor;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.Service;
 import org.jboss.msc.service.ServiceBuilder;
 import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
@@ -59,29 +62,55 @@ class LiquibaseSubsystemAdd extends AbstractBoottimeAddStepHandler {
 
         ServiceTarget serviceTarget = context.getServiceTarget();
 
-        // MIGRATION NOTE: Registering ChangeLogConfigurationRegistryService as a singleton value service.
+        // MIGRATION NOTE: Using modern functional service pattern for WildFly 28
+        final ChangeLogConfigurationRegistryService registryServiceInstance = new ChangeLogConfigurationRegistryService();
         ServiceBuilder<?> registryBuilder = serviceTarget.addService(ChangeLogConfigurationRegistryService.SERVICE_NAME);
-        registryBuilder.setInstance(new ValueService<>(new ChangeLogConfigurationRegistryService()));
+        Consumer<ChangeLogConfigurationRegistryService> registryConsumer = registryBuilder.provides(ChangeLogConfigurationRegistryService.SERVICE_NAME);
+        registryBuilder.setInstance(Service.newInstance(registryConsumer, registryServiceInstance));
         registryBuilder.setInitialMode(ServiceController.Mode.LAZY);
         registryBuilder.install();
 
-        // MIGRATION NOTE: Installing ChangeLogModelService using modern ServiceBuilder.
+        // MIGRATION NOTE: Store registry service instance for access via SubsystemServices
+        SubsystemServices.setRegistryService(registryServiceInstance);
+
+        // MIGRATION NOTE: Installing ChangeLogModelService using modern functional pattern
         ServiceName modelUpdateServiceName = ChangeLogModelService.getServiceName();
         ServiceBuilder<?> modelServiceBuilder = serviceTarget.addService(modelUpdateServiceName);
+        Consumer<ChangeLogModelService> modelConsumer = modelServiceBuilder.provides(modelUpdateServiceName);
         
-        // MIGRATION NOTE: Injecting ChangeLogConfigurationRegistryService dependency as a Supplier.
-        Supplier<ChangeLogConfigurationRegistryService> registryService = modelServiceBuilder.requires(ChangeLogConfigurationRegistryService.SERVICE_NAME);
-
-        // MIGRATION NOTE: Pass the supplier to the ChangeLogModelService constructor.
-        modelServiceBuilder.setInstance(new ValueService<>(new ChangeLogModelService(registryService)));
+        // MIGRATION NOTE: Create ChangeLogModelService with direct reference to registry
+        ChangeLogModelService modelServiceInstance = new ChangeLogModelService(() -> registryServiceInstance);
+        modelServiceBuilder.setInstance(Service.newInstance(modelConsumer, modelServiceInstance));
         modelServiceBuilder.setInitialMode(ServiceController.Mode.ACTIVE);
         modelServiceBuilder.install();
+        
+        // MIGRATION NOTE: Store model service instance for access via SubsystemServices
+        SubsystemServices.setChangeLogModelService(modelServiceInstance);
         // MIGRATION NOTE: Replaced ServiceHelper.installService with direct ServiceBuilder usage above.
 
         final ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(Liquibase.class.getClassLoader());
-            Scope.setScopeManager(new WildFlyScopeManager());
+            WildFlyScopeManager scopeManager = new WildFlyScopeManager();
+            Scope.setScopeManager(scopeManager);
+            
+            // In Liquibase 4.33.0, we need to manually create the root scope
+            // In older versions, this was done automatically by Liquibase
+            Map<String, Object> rootScopeObjects = new HashMap<>();
+            // Don't set a ResourceAccessor here - it will be set properly during changelog execution
+            // Setting ClassLoaderResourceAccessor here causes VFS URL parsing issues
+            
+            // Create root scope using reflection since constructor is protected
+            try {
+                java.lang.reflect.Constructor<Scope> constructor = Scope.class.getDeclaredConstructor(Scope.class, Map.class);
+                constructor.setAccessible(true);
+                Scope rootScope = constructor.newInstance(null, rootScopeObjects);
+                
+                // Set it as the current scope in our manager
+                scopeManager.setScope(rootScope);
+            } catch (Exception e) {
+                LiquibaseLogger.ROOT_LOGGER.warn("Failed to initialize root scope: " + e.getMessage());
+            }
         } finally {
             Thread.currentThread().setContextClassLoader(oldTCCL);
         }
@@ -89,8 +118,7 @@ class LiquibaseSubsystemAdd extends AbstractBoottimeAddStepHandler {
         context.addStep(new AbstractDeploymentChainStep() {
             public void execute(DeploymentProcessorTarget processorTarget) {
                 // MIGRATION NOTE: DUP registration logic remains structurally similar.
-                // The ChangeLogConfigurationRegistryService instance is obtained from the supplier and passed to the DUP.
-                ChangeLogConfigurationRegistryService registryServiceInstance = registryService.get();
+                // Pass the supplier directly - WildFly 28 doesn't allow getValue() during operation phase
 
                 DeploymentUnitProcessor parser = new JBossAllXmlParserRegisteringProcessor<>(LiquibaseJBossAllParser.ROOT_ELEMENT,
                         LiquibaseConstants.LIQUIBASE_CHANGELOG_BUILDERS, new LiquibaseJBossAllParser());
@@ -98,8 +126,8 @@ class LiquibaseSubsystemAdd extends AbstractBoottimeAddStepHandler {
                 processorTarget.addDeploymentProcessor(LiquibaseExtension.SUBSYSTEM_NAME, Phase.PARSE, PARSE_LIQUIBASE_CDI_ANNOTATIONS, new LiquibaseCdiAnnotationProcessor());
                 processorTarget.addDeploymentProcessor(LiquibaseExtension.SUBSYSTEM_NAME, Phase.DEPENDENCIES, DEPENDENCIES_LIQUIBASE, new LiquibaseDependenciesProcessor());
                 processorTarget.addDeploymentProcessor(LiquibaseExtension.SUBSYSTEM_NAME, Phase.INSTALL, INSTALL_LIQUIBASE_CHANGE_LOG, new LiquibaseChangeLogParseProcessor());
-                // MIGRATION NOTE: Passing the actual instance of the registry service to the DUP.
-                processorTarget.addDeploymentProcessor(LiquibaseExtension.SUBSYSTEM_NAME, Phase.INSTALL, INSTALL_LIQUIBASE_MIGRATION_EXECUTION, new LiquibaseChangeLogExecutionProcessor(registryServiceInstance));
+                // MIGRATION NOTE: Pass the service instance directly since we have it available
+                processorTarget.addDeploymentProcessor(LiquibaseExtension.SUBSYSTEM_NAME, Phase.INSTALL, INSTALL_LIQUIBASE_MIGRATION_EXECUTION, new LiquibaseChangeLogExecutionProcessor(() -> registryServiceInstance));
             }
         }, OperationContext.Stage.RUNTIME);
     }

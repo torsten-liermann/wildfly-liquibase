@@ -1,12 +1,12 @@
 <?xml version="1.0" ?>
 <module xmlns="urn:jboss:module:1.9" name="org.liquibase.cdi">
     <resources>
-        <artifact name="${org.liquibase:liquibase-cdi}"/>
+        <artifact name="${org.liquibase:liquibase-cdi-jakarta}"/>
     </resources>
     <dependencies>
         <module name="jakarta.annotation.api"/>
         <module name="jakarta.enterprise.api"/>
-        <module name="java.api"/>
+        <module name="javax.api"/>
         <module name="javax.sql.api"/>
         <module name="org.liquibase.core"/>
     </dependencies>

@@ -17,7 +17,7 @@
 -- limitations under the License.
 -- #L%
 ---
-CREATE TABLE Orders (
+CREATE TABLE orders (
     id INT,
-    description VARCHAR(50),
+    description VARCHAR(50)
 );

@@ -35,7 +35,7 @@ import org.jboss.modules.ModuleClassLoader;
 
 /**
  * Custom scope manager to get and set a Liquibase {@link Scope}, bound to the thread executing the change log update.
- * <p/>
+ *
  * This is required since Liquibase does not handle concurrent changelog executions within the same JVM. Therefore scopes
  * are vulnerable to being overwritten by competing threads.
  */
@@ -67,10 +67,21 @@ public class WildFlyScopeManager extends ScopeManager {
             }
         }
     }
-
+    
+    /**
+     * Public method to set the current scope, delegating to the protected method.
+     * This is needed for initialization purposes.
+     */
     @Override
     protected Scope init(Scope scope) throws Exception {
         return scope;
+    }
+    
+    /**
+     * Public method to set a scope - used for initialization
+     */
+    public void setScope(Scope scope) {
+        setCurrentScope(scope);
     }
 
     public static synchronized Map<Long, Scope> getScopes() {

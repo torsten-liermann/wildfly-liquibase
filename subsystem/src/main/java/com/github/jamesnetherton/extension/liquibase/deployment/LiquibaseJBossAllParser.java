@@ -151,6 +151,7 @@ public class LiquibaseJBossAllParser implements JBossAllXMLParser<BuilderCollect
                         case FAIL_ON_ERROR:
                             boolean failOnError = Boolean.parseBoolean(parseElement(reader, builder));
                             builder.failOnError(failOnError);
+                            break;
                         case HOST_EXCLUDES:
                             builder.hostExcludes(parseElement(reader, builder));
                             break;

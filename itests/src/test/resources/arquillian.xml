@@ -25,9 +25,10 @@
     <container qualifier="managed" default="true">
         <configuration>
             <property name="allowConnectingToRunningServer">true</property>
-            <property name="javaVmArguments">-agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n ${javaVmExtraArguments}</property>
+            <property name="javaVmArguments">-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djboss.http.port=18080 -Djboss.management.http.port=19990 -agentlib:jdwp=transport=dt_socket,address=8787,server=y,suspend=n ${javaVmExtraArguments}</property>
             <property name="jbossHome">${jboss.home}</property>
             <property name="serverConfig">${server.configuration}</property>
+            <property name="managementPort">19990</property>
         </configuration>
     </container>
 

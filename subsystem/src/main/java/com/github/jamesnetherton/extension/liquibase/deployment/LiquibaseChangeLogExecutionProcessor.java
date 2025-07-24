@@ -47,13 +47,13 @@ import org.jboss.msc.service.ServiceName;
  */
 public class LiquibaseChangeLogExecutionProcessor implements DeploymentUnitProcessor{
 
-    private final ChangeLogConfigurationRegistryService registryService;
+    private final Supplier<ChangeLogConfigurationRegistryService> registryServiceSupplier;
     // MIGRATION NOTE: Moved counter for unique service names here or to a shared utility.
     private static final AtomicInteger DEPLOYMENT_EXECUTION_COUNTER = new AtomicInteger();
 
 
-    public LiquibaseChangeLogExecutionProcessor(ChangeLogConfigurationRegistryService registryService) {
-        this.registryService = registryService;
+    public LiquibaseChangeLogExecutionProcessor(Supplier<ChangeLogConfigurationRegistryService> registryServiceSupplier) {
+        this.registryServiceSupplier = registryServiceSupplier;
     }
 
     // MIGRATION NOTE: Helper method to create unique service names for deployment-specific changelogs.
@@ -75,7 +75,7 @@ public class LiquibaseChangeLogExecutionProcessor implements DeploymentUnitProce
         for (ChangeLogConfiguration configuration : configurations) {
             String dataSourceJndiName = configuration.getDataSource();
             // MIGRATION NOTE: Check against registryService instance provided in constructor
-            if (registryService.containsDatasource(dataSourceJndiName) && registryService.getConfigurationByDataSource(dataSourceJndiName).map(c ->!c.getName().equals(configuration.getName())).orElse(false)) {
+            if (registryServiceSupplier.get().containsDatasource(dataSourceJndiName) && registryServiceSupplier.get().getConfigurationByDataSource(dataSourceJndiName).map(c ->!c.getName().equals(configuration.getName())).orElse(false)) {
                 throw new DeploymentUnitProcessingException(String.format(MESSAGE_DUPLICATE_DATASOURCE, configuration.getDataSource()));
             }
 
@@ -96,7 +96,7 @@ public class LiquibaseChangeLogExecutionProcessor implements DeploymentUnitProce
             builder.setInitialMode(ServiceController.Mode.ACTIVE); // Ensure it runs on deployment.
             builder.install();
 
-            registryService.addConfiguration(getConfigurationKey(deploymentUnit, configuration), configuration);
+            registryServiceSupplier.get().addConfiguration(getConfigurationKey(deploymentUnit, configuration), configuration);
         }
     }
 
@@ -107,7 +107,7 @@ public class LiquibaseChangeLogExecutionProcessor implements DeploymentUnitProce
             List<ChangeLogConfiguration> configurations = deploymentUnit.getAttachmentList(LiquibaseConstants.LIQUIBASE_CHANGELOGS);
             if (!configurations.isEmpty()) {
                 for (ChangeLogConfiguration configuration : configurations) {
-                    registryService.removeConfiguration(getConfigurationKey(deploymentUnit, configuration));
+                    registryServiceSupplier.get().removeConfiguration(getConfigurationKey(deploymentUnit, configuration));
                 }
             }
 

@@ -20,7 +20,7 @@
         <version.org.eclipse.egit.github>2.1.5</version.org.eclipse.egit.github>
         <version.org.jboss.arquillian>1.7.0.Final</version.org.jboss.arquillian>
         <version.org.jdom>2.0.6</version.org.jdom>
-        <version.org.liquibase>4.32.0</version.org.liquibase>
+        <version.org.liquibase>4.33.0</version.org.liquibase>
         <version.org.slf4j>1.7.30</version.org.slf4j>
         <version.org.snakeyaml>1.31</version.org.snakeyaml>
         <version.org.wildfly>28.0.1.Final</version.org.wildfly>
@@ -179,7 +179,7 @@
             <!-- Liquibase -->
             <dependency>
                 <groupId>org.liquibase</groupId>
-                <artifactId>liquibase-cdi</artifactId>
+                <artifactId>liquibase-cdi-jakarta</artifactId>
                 <version>${version.org.liquibase}</version>
             </dependency>
             <dependency>

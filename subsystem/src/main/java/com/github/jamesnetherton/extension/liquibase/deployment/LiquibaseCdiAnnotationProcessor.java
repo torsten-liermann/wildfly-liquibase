@@ -38,7 +38,7 @@ public class LiquibaseCdiAnnotationProcessor implements DeploymentUnitProcessor 
     private static final String LIQUIBASE_CDI_PACKAGE_BASE = "liquibase.integration.cdi.annotations";
     private static final DotName[] LIQUIBASE_CDI_ANNOTATIONS = new DotName[] {
         DotName.createSimple(LIQUIBASE_CDI_PACKAGE_BASE + ".Liquibase"),
-        DotName.createSimple(LIQUIBASE_CDI_PACKAGE_BASE + "LiquibaseSchema"),
+        DotName.createSimple(LIQUIBASE_CDI_PACKAGE_BASE + ".LiquibaseSchema"),
         DotName.createSimple(LIQUIBASE_CDI_PACKAGE_BASE + ".LiquibaseType")
     };
 

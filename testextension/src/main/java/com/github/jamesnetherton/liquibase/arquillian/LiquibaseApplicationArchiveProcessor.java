@@ -75,6 +75,7 @@ public final class LiquibaseApplicationArchiveProcessor implements ApplicationAr
 
                 String fileName = definition.fileName().isEmpty() ? String.format("%s-%s", tableName, format.getFileName()) : definition.fileName();
                 StringAsset asset = new StringAsset(changeLog);
+                
                 if (applicationArchive instanceof JavaArchive) {
                     JavaArchive javaArchive = (JavaArchive) applicationArchive;
                     if (definition.resourceLocation().equals(ResourceLocation.CLASSPATH)) {
@@ -93,6 +94,7 @@ public final class LiquibaseApplicationArchiveProcessor implements ApplicationAr
                     } else if (definition.resourceLocation().equals(ResourceLocation.WEB_INF)) {
                         webArchive.addAsWebInfResource(asset, fileName);
                     } else {
+                        // For ROOT location in WAR files, add to root of archive without leading slash
                         webArchive.add(asset, fileName);
                     }
                 } else {

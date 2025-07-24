@@ -40,6 +40,7 @@ public final class ChangeLogConfiguration {
     private String labels;
     private String name;
     private String path;
+    private String physicalBasePath;
     private ClassLoader classLoader;
     private ConfigurationOrigin origin;
 
@@ -57,6 +58,14 @@ public final class ChangeLogConfiguration {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getPhysicalBasePath() {
+        return physicalBasePath;
+    }
+
+    public void setPhysicalBasePath(String physicalBasePath) {
+        this.physicalBasePath = physicalBasePath;
     }
 
     public String getDeployment() {
@@ -193,6 +202,7 @@ public final class ChangeLogConfiguration {
         return failOnError == that.failOnError &&
                Objects.equals(name, that.name) &&
                Objects.equals(path, that.path) &&
+               Objects.equals(physicalBasePath, that.physicalBasePath) &&
                Objects.equals(contexts, that.contexts) &&
                Objects.equals(dataSource, that.dataSource) &&
                Objects.equals(definition, that.definition) &&
@@ -206,7 +216,7 @@ public final class ChangeLogConfiguration {
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, path, contexts, dataSource, definition, deployment, failOnError, hostExcludes, hostIncludes, labels, classLoader, origin);
+        return Objects.hash(name, path, physicalBasePath, contexts, dataSource, definition, deployment, failOnError, hostExcludes, hostIncludes, labels, classLoader, origin);
     }
 
     public static class Builder {
@@ -220,6 +230,7 @@ public final class ChangeLogConfiguration {
         private String labels;
         private String name;
         private String path;
+        private String physicalBasePath;
         private ClassLoader classLoader;
         private ConfigurationOrigin origin;
 
@@ -270,6 +281,11 @@ public final class ChangeLogConfiguration {
 
         public Builder path(String path) {
             this.path = path;
+            return this;
+        }
+
+        public Builder physicalBasePath(String physicalBasePath) {
+            this.physicalBasePath = physicalBasePath;
             return this;
         }
 
@@ -325,6 +341,7 @@ public final class ChangeLogConfiguration {
             configuration.setName(this.name);
             configuration.setOrigin(this.origin);
             configuration.setPath(this.path);
+            configuration.setPhysicalBasePath(this.physicalBasePath);
             return configuration;
         }
 

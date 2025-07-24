@@ -37,7 +37,7 @@ public class DatabaseInitializer extends LiquibaseTestSupport {
         try {
             executeSqlScript(inputStream, "java:jboss/datasources/ExampleDS");
         } catch (Exception e) {
-            // Ignore
+            throw new RuntimeException("Failed to initialize database", e);
         }
     }
 }

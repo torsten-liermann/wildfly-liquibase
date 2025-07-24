@@ -63,7 +63,7 @@ public class ChangeLogModelService {
 
     public void createChangeLogModel(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         String changeLogName = operation.get(ModelDescriptionConstants.OP_ADDR).asObject().get(ModelConstants.DATABASE_CHANGELOG).asString();
-        String changeLogDefinition = ChangeLogResource.VALUE.resolveModelAttribute(context, model).asString();
+        String changeLogDefinition = ChangeLogResource.VALUE.resolveModelAttribute(context, model).asStringOrNull();
         String contextsStr = ChangeLogResource.CONTEXTS.resolveModelAttribute(context, model).asString("");
         String dataSourceJndiName = ChangeLogResource.DATASOURCE.resolveModelAttribute(context, model).asString();
         boolean failOnError = ChangeLogResource.FAIL_ON_ERROR.resolveModelAttribute(context, model).asBoolean(true);
@@ -84,8 +84,9 @@ public class ChangeLogModelService {
             .subsystemOrigin()
             .build();
 
-        if (configuration.getFormat().equals(ChangeLogFormat.UNKNOWN)) {
-            throw new OperationFailedException("Unable to determine change log format. Supported formats are JSON, SQL, YAML and XML");
+        // Only validate format for inline changelogs
+        if (changeLogDefinition != null && configuration.getFormat().equals(ChangeLogFormat.UNKNOWN)) {
+            throw new OperationFailedException("Unable to determine change log format for inline changelog. Supported formats are JSON, SQL, YAML and XML");
         }
 
         ServiceTarget serviceTarget = context.getServiceTarget();
@@ -141,7 +142,8 @@ public class ChangeLogModelService {
                  throw new OperationFailedException("Unknown attribute to update: " + attributeName);
         }
 
-        if (configuration.getFormat().equals(ChangeLogFormat.UNKNOWN)) {
+        // Only validate format for inline changelogs
+        if (configuration.getDefinition() != null && configuration.getFormat().equals(ChangeLogFormat.UNKNOWN)) {
             throw new OperationFailedException("Unable to determine change log format after update. Supported formats are JSON, SQL, YAML and XML");
         }
 

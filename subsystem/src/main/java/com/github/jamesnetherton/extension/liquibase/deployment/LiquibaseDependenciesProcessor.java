@@ -29,7 +29,6 @@ import org.jboss.as.server.deployment.annotation.CompositeIndex;
 import org.jboss.as.server.deployment.module.ModuleDependency;
 import org.jboss.as.server.deployment.module.ModuleSpecification;
 import org.jboss.as.server.moduleservice.ServiceModuleLoader;
-import org.jboss.as.weld._private.WeldDeploymentMarker;
 import org.jboss.jandex.AnnotationInstance;
 import org.jboss.jandex.DotName;
 
@@ -40,7 +39,7 @@ public class LiquibaseDependenciesProcessor implements DeploymentUnitProcessor{
 
     private static final String MODULE_LIQUIBASE_CORE = "org.liquibase.core";
     private static final String MODULE_LIQUIBASE_CDI = "org.liquibase.cdi";
-    private static final String LIQUIBASE_TYPE = "liquibase.integration.cdi.annotations.LiquibaseType";
+    private static final String LIQUIBASE_TYPE = "liquibase.integration.jakarta.cdi.annotations.LiquibaseType";
 
     @Override
     public void deploy(DeploymentPhaseContext phaseContext) throws DeploymentUnitProcessingException {
@@ -57,7 +56,10 @@ public class LiquibaseDependenciesProcessor implements DeploymentUnitProcessor{
         CompositeIndex index = deploymentUnit.getAttachment(Attachments.COMPOSITE_ANNOTATION_INDEX);
         List<AnnotationInstance> annotations = index.getAnnotations(DotName.createSimple(LIQUIBASE_TYPE));
 
-        if (WeldDeploymentMarker.isPartOfWeldDeployment(deploymentUnit) && !annotations.isEmpty()) {
+        if (!annotations.isEmpty()) {
+            // If the deployment uses Liquibase CDI annotations, add the CDI module dependency
+            // Note: In WildFly 28, we simplified this to always add the dependency when CDI annotations are present
+            // The CDI runtime will handle whether CDI is actually available
             ModuleDependency liquibaseCdiDep = new ModuleDependency(moduleLoader, MODULE_LIQUIBASE_CDI, false, true, true, true);
             moduleSpec.addUserDependency(liquibaseCdiDep);
         }

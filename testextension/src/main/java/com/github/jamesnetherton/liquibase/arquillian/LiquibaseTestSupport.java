@@ -174,10 +174,23 @@ public class LiquibaseTestSupport {
             jbossCli += ".sh";
         }
 
+        // Get the management port from system property or use default test port
+        String managementPort = System.getProperty("jboss.management.http.port", "19990");
+        
         ProcessBuilder builder = new ProcessBuilder();
         builder.inheritIO();
         builder.environment().put("NOPAUSE", "Y");
-        builder.command(jbossHome + "/bin/" + jbossCli, "-c", command, "--timeout=" + DEFAULT_CLI_SCRIPT_TIMEOUT);
+        
+        // Build command with proper controller URL - controller must come before -c
+        builder.command(
+            jbossHome + "/bin/" + jbossCli, 
+            "--controller=remote+http://localhost:" + managementPort,
+            "-c",
+            command, 
+            "--timeout=" + DEFAULT_CLI_SCRIPT_TIMEOUT
+        );
+        
+        LOG.info("Executing CLI command: {}", builder.command());
 
         Process process = builder.start();
         process.waitFor();

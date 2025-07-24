@@ -39,7 +39,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(Arquillian.class)
-@Ignore("https://github.com/jamesnetherton/wildfly-liquibase/issues/42")
+@Ignore("https://github.com/jamesnetherton/wildfly-liquibase/issues/42 - CDI-based Liquibase starts after JPA")
 public class LiquibaseHibernateJPAIntegrationTest extends LiquibaseTestSupport {
 
     @PersistenceContext

@@ -22,8 +22,10 @@ package com.github.jamesnetherton.extension.liquibase.test.jpa.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
-@Entity(name = "Orders")
+@Entity
+@Table(name = "orders")
 public class Order {
 
     @Id

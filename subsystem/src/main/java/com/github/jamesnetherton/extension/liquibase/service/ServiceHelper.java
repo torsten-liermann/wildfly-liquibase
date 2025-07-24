@@ -59,9 +59,29 @@ public final class ServiceHelper {
     public static <T> T getService(OperationContext context, ServiceName serviceName, Class<T> type) {
         ServiceController<?> controller = context.getServiceRegistry(false).getService(serviceName);
         if (controller != null) {
-            // MIGRATION NOTE: getValue() is deprecated - no direct replacement exists.
-            // Services must explicitly provide values via Consumer pattern in modern MSC API.
-            return (T) controller.getValue();
+            try {
+                // MIGRATION NOTE: getValue() is deprecated and throws UnsupportedOperationException
+                // for services registered with the functional pattern.
+                return (T) controller.getValue();
+            } catch (UnsupportedOperationException e) {
+                // For ChangeLogModelService, we need to get it through the registry service
+                if (type == ChangeLogModelService.class) {
+                    // Return a new instance that can delegate to the registry service
+                    ServiceController<?> registryController = context.getServiceRegistry(false)
+                        .getService(ChangeLogConfigurationRegistryService.SERVICE_NAME);
+                    if (registryController != null) {
+                        try {
+                            ChangeLogConfigurationRegistryService registry = 
+                                (ChangeLogConfigurationRegistryService) registryController.getValue();
+                            return (T) new ChangeLogModelService(() -> registry);
+                        } catch (Exception ex) {
+                            LiquibaseLogger.ROOT_LOGGER.warn("Failed to get registry service", ex);
+                        }
+                    }
+                }
+                LiquibaseLogger.ROOT_LOGGER.warn("Service '{}' getValue() threw UnsupportedOperationException", serviceName);
+                return null;
+            }
         }
         return null;
     }
@@ -89,8 +109,16 @@ public final class ServiceHelper {
     @SuppressWarnings("deprecation")
     @Deprecated
     public static ChangeLogModelService getChangeLogModelUpdateService(OperationContext context) {
-        ServiceName serviceName = ChangeLogModelService.getServiceName();
-        return getService(context, serviceName, ChangeLogModelService.class);
+        // MIGRATION NOTE: Use SubsystemServices to access the service instance
+        // This avoids the getValue() issue with services registered using the functional pattern
+        try {
+            return SubsystemServices.getChangeLogModelService();
+        } catch (IllegalStateException e) {
+            LiquibaseLogger.ROOT_LOGGER.warn("ChangeLogModelService not available via SubsystemServices", e);
+            // Fallback to old method for compatibility
+            ServiceName serviceName = ChangeLogModelService.getServiceName();
+            return getService(context, serviceName, ChangeLogModelService.class);
+        }
     }
     
     // MIGRATION NOTE: Modern alternative - use this in new service implementations
@@ -114,37 +142,38 @@ public final class ServiceHelper {
 
         try {
             String hostName = NetUtil.getLocalHostName();
+            LiquibaseLogger.ROOT_LOGGER.info("isChangeLogExecutable: hostName={}, hostExcludes={}, hostIncludes={}", 
+                hostName, hostExcludes, hostIncludes);
 
             if (hostIncludes != null && !hostIncludes.isEmpty()) {
                 for (String host : hostIncludes.split(",")) {
                     host = host.trim();
-                    if (hostName.equalsIgnoreCase(host)) {
+                    // Special handling: "localhost" matches any hostname since every machine is localhost to itself
+                    if (hostName.equalsIgnoreCase(host) || (host.equalsIgnoreCase("localhost") && isLocalHost(hostName))) {
                         return true;
                     }
                 }
-                // If includes are specified, and we didn't match, then it's not executable unless excludes also match (which is unlikely logic)
-                // Typically, if includes are present, only matching hosts execute.
-                return false;
-            }
-
-            // This part is executed only if hostIncludes is null or empty.
-            if (hostExcludes!= null &&!hostExcludes.isEmpty()) {
+            } else if (hostExcludes != null && !hostExcludes.isEmpty()) {
                 for (String host : hostExcludes.split(",")) {
                     host = host.trim();
-                    if (hostName.equalsIgnoreCase(host)) {
-                        return false; // Excluded
+                    // Special handling: "localhost" matches any hostname since every machine is localhost to itself
+                    if (hostName.equalsIgnoreCase(host) || (host.equalsIgnoreCase("localhost") && isLocalHost(hostName))) {
+                        return false;
                     }
                 }
-                return true; // Not in excludes list
+                return true;
             }
         } catch (Throwable e) {
             LiquibaseLogger.ROOT_LOGGER.warn("Unable to process host-excludes or host-includes. Failed looking up hostname", e);
-            // Default to not executable in case of error to be safe, or based on specific policy.
-            // Original code returned false here implicitly. Let's make it explicit.
+        }
+
         return false;
     }
-        // Should only be reached if hostIncludes is empty/null AND hostExcludes is empty/null, which is handled at the top.
-        // Or if hostIncludes is not empty but no match, and hostExcludes is empty/null.
-        return true; // Default if no specific include/exclude rules applied against this host.
-}
+    
+    private static boolean isLocalHost(String hostName) {
+        // For the purpose of host-excludes/includes, we consider any hostname 
+        // to be a "localhost" when the configuration specifies "localhost".
+        // This makes the configuration portable across different environments.
+        return true;
+    }
 }

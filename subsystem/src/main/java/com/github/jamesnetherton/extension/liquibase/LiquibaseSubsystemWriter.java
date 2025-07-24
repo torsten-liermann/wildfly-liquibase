@@ -49,7 +49,7 @@ final class LiquibaseSubsystemWriter implements XMLStreamConstants, XMLElementWr
                 String hostExcludes = properties.get(key).get(ModelConstants.HOST_EXCLUDES).asStringOrNull();
                 String hostIncludes = properties.get(key).get(ModelConstants.HOST_INCLUDES).asStringOrNull();
                 String labels = properties.get(key).get(ModelConstants.LABELS).asStringOrNull();
-                String val = properties.get(key).get(ModelConstants.VALUE).asString();
+                String val = properties.get(key).get(ModelConstants.VALUE).asStringOrNull();
 
                 writer.writeStartElement(Namespace10.Element.DATABASE_CHANGELOG.getLocalName());
                 writer.writeAttribute(Namespace10.Attribute.NAME.getLocalName(), key);
@@ -75,7 +75,10 @@ final class LiquibaseSubsystemWriter implements XMLStreamConstants, XMLElementWr
                     writer.writeAttribute(Namespace10.Attribute.HOST_INCLUDES.getLocalName(), hostIncludes);
                 }
 
-                writer.writeCharacters(val);
+                // Only write value if it's defined (inline changelog)
+                if (val != null && !val.isEmpty()) {
+                    writer.writeCharacters(val);
+                }
                 writer.writeEndElement();
             }
         }

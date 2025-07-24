@@ -28,6 +28,7 @@ import java.net.URL;
 import liquibase.resource.AbstractResource;
 import liquibase.resource.Resource;
 import liquibase.resource.ResourceAccessor;
+import org.jboss.logging.Logger;
 
 /**
  * Modern Resource implementation for VFS-based resources in WildFly.
@@ -35,6 +36,7 @@ import liquibase.resource.ResourceAccessor;
  */
 public class VFSResource extends AbstractResource {
     
+    private static final Logger LOG = Logger.getLogger(VFSResource.class);
     private final String path;
     private final URL url;
     
@@ -57,7 +59,8 @@ public class VFSResource extends AbstractResource {
     
     @Override
     public String getPath() {
-        return path;
+        // Ensure we never return null
+        return path != null ? path : "";
     }
     
     @Override
@@ -67,10 +70,25 @@ public class VFSResource extends AbstractResource {
     
     @Override
     public InputStream openInputStream() throws IOException {
-        if (url == null) {
-            return null;
+        if (url != null) {
+            LOG.debugf("VFSResource.openInputStream() opening stream for path: %s, url: %s", path, url);
+            InputStream stream = url.openStream();
+            if (stream != null) {
+                // Log the first few bytes to verify content is readable
+                if (LOG.isDebugEnabled()) {
+                    stream = new java.io.BufferedInputStream(stream);
+                    stream.mark(100);
+                    byte[] buffer = new byte[100];
+                    int read = stream.read(buffer);
+                    if (read > 0) {
+                        LOG.debugf("VFSResource.openInputStream() first %d bytes: %s", read, new String(buffer, 0, read, "UTF-8"));
+                    }
+                    stream.reset();
+                }
+            }
+            return stream;
         }
-        return url.openStream();
+        throw new IOException("Resource not found: " + path);
     }
     
     @Override
@@ -97,6 +115,10 @@ public class VFSResource extends AbstractResource {
     
     @Override
     public Resource resolve(String other) {
+        if (other == null) {
+            return null;
+        }
+        
         // Resolve relative to current path
         String resolvedPath;
         if (other.startsWith("/")) {
@@ -108,32 +130,70 @@ public class VFSResource extends AbstractResource {
             resolvedPath = parentPath.isEmpty() ? other : parentPath + "/" + other;
         }
         
+        // Normalize the path
+        resolvedPath = normalizePath(resolvedPath);
+        
         // Try to get the URL for the resolved path
         try {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             URL resolvedUrl = cl.getResource(resolvedPath);
+            // Even if URL is null, create a valid resource with a non-null path
             return new VFSResource(resolvedPath, resolvedUrl, null);
         } catch (Exception e) {
-            // Return a resource that doesn't exist
+            // Return a resource with a valid path but no URL
             return new VFSResource(resolvedPath, null, null);
         }
     }
 
     @Override
     public Resource resolveSibling(String relativePath) {
+        if (relativePath == null) {
+            return null;
+        }
+        
         // For VFS resources, resolve relative to the parent path
         String parentPath = path.contains("/") ? path.substring(0, path.lastIndexOf("/")) : "";
         String resolvedPath = parentPath.isEmpty() ? relativePath : parentPath + "/" + relativePath;
+        
+        // Normalize the path to remove any "./" or "../" segments
+        resolvedPath = normalizePath(resolvedPath);
         
         // Try to get the URL for the resolved path
         try {
             ClassLoader cl = Thread.currentThread().getContextClassLoader();
             URL resolvedUrl = cl.getResource(resolvedPath);
+            // Even if URL is null, create a valid resource with a non-null path
             return new VFSResource(resolvedPath, resolvedUrl, null);
         } catch (Exception e) {
-            // Return a resource that doesn't exist
+            // Return a resource with a valid path but no URL
             return new VFSResource(resolvedPath, null, null);
         }
+    }
+    
+    private String normalizePath(String path) {
+        if (path == null) {
+            return null;
+        }
+        // Remove leading slash for classloader resources
+        if (path.startsWith("/")) {
+            path = path.substring(1);
+        }
+        // Simple normalization - could be enhanced
+        path = path.replace("./", "");
+        while (path.contains("/../")) {
+            int idx = path.indexOf("/../");
+            if (idx > 0) {
+                int prevSlash = path.lastIndexOf("/", idx - 1);
+                if (prevSlash >= 0) {
+                    path = path.substring(0, prevSlash) + path.substring(idx + 3);
+                } else {
+                    path = path.substring(idx + 4);
+                }
+            } else {
+                path = path.substring(4);
+            }
+        }
+        return path;
     }
     
     @Override

@@ -40,7 +40,7 @@
             <column name="lastname" type="varchar(50)">
                 <constraints nullable="false"/>
             </column>
-            <column name="state" type="char(2)"/>
+            <column name="state" type="varchar(2)"/>
         </createTable>
     </changeSet>
 
@@ -48,5 +48,22 @@
         <addColumn tableName="ear_test">
             <column name="username" type="varchar(8)"/>
         </addColumn>
+    </changeSet>
+    
+    <changeSet id="ear-change-3" author="wildfly">
+        <insert tableName="ear_test">
+            <column name="id" valueNumeric="1"/>
+            <column name="firstname" value="John"/>
+            <column name="lastname" value="Doe"/>
+            <column name="state" value="CA"/>
+            <column name="username" value="jdoe"/>
+        </insert>
+        <insert tableName="ear_test">
+            <column name="id" valueNumeric="2"/>
+            <column name="firstname" value="Jane"/>
+            <column name="lastname" value="Smith"/>
+            <column name="state" value="NY"/>
+            <column name="username" value="jsmith"/>
+        </insert>
     </changeSet>
 </databaseChangeLog>

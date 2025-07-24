@@ -13,7 +13,7 @@
 
     <properties>
         <jboss.home>${project.build.directory}/wildfly-${version.org.wildfly}</jboss.home>
-        <javaVmExtraArguments />
+        <javaVmExtraArguments>-Dliquibase.duplicateFileMode=WARN</javaVmExtraArguments>
         <server.configuration>standalone.xml</server.configuration>
     </properties>
 
@@ -26,7 +26,7 @@
         </dependency>
         <dependency>
             <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-cdi</artifactId>
+            <artifactId>liquibase-cdi-jakarta</artifactId>
             <scope>provided</scope>
             <exclusions>
                 <exclusion>
@@ -121,6 +121,11 @@
                     <excludes>
                         <exclude>**/example/*Test.java</exclude>
                     </excludes>
+                    <systemPropertyVariables>
+                        <liquibase.duplicateFileMode>WARN</liquibase.duplicateFileMode>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+                        <org.jboss.logging.provider>jboss</org.jboss.logging.provider>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

@@ -127,7 +127,7 @@ final class LiquibaseSubsystemParser implements Namespace10, XMLStreamConstants,
             }
         }
 
-        String changeLogDefinition = content.toString();
+        String changeLogDefinition = content.toString().trim();
 
         ModelNode propNode = new ModelNode();
         propNode.get(OP).set(ADD);
@@ -135,7 +135,11 @@ final class LiquibaseSubsystemParser implements Namespace10, XMLStreamConstants,
             .set(address)
             .add(ModelConstants.DATABASE_CHANGELOG, changeLogName);
         propNode.get(ModelConstants.DATASOURCE).set(dataSource);
-        propNode.get(ModelConstants.VALUE).set(changeLogDefinition);
+        
+        // Only set VALUE if there's actual content (inline changelog)
+        if (!changeLogDefinition.isEmpty()) {
+            propNode.get(ModelConstants.VALUE).set(changeLogDefinition);
+        }
 
         if (contexts != null) {
             propNode.get(ModelConstants.CONTEXTS).set(contexts);

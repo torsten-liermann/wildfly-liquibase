@@ -48,9 +48,11 @@ import java.util.TreeSet;
 import liquibase.resource.InputStreamList;
 import liquibase.resource.Resource;
 import liquibase.resource.ResourceAccessor;
+import org.jboss.logging.Logger;
 
 public class WildFlyCompositeResourceAccessor implements ResourceAccessor {
 
+    private static final Logger LOG = Logger.getLogger(WildFlyCompositeResourceAccessor.class);
     private final ResourceAccessor[] resourceAccessors;
 
     public WildFlyCompositeResourceAccessor(ResourceAccessor... resourceAccessors) {
@@ -94,26 +96,85 @@ public class WildFlyCompositeResourceAccessor implements ResourceAccessor {
     // MIGRATION NOTE: Added missing getAll method for Liquibase 4.32.0 compatibility
     @Override
     public List<Resource> getAll(String path) throws IOException {
+        LOG.infof("WildFlyCompositeResourceAccessor.getAll() called with path: %s", path);
         List<Resource> resources = new ArrayList<>();
         for (ResourceAccessor accessor : resourceAccessors) {
             final List<Resource> list = accessor.getAll(path);
             if (list != null) {
-                resources.addAll(list);
+                // Deduplicate resources based on URI to avoid "Found 2 files" errors
+                for (Resource newResource : list) {
+                    boolean isDuplicate = false;
+                    for (Resource existingResource : resources) {
+                        if (existingResource.getUri() != null && newResource.getUri() != null) {
+                            // Compare URIs after normalizing paths
+                            String existingPath = existingResource.getUri().toString();
+                            String newPath = newResource.getUri().toString();
+                            
+                            // Remove VFS-specific path components for comparison
+                            existingPath = normalizeVfsPath(existingPath);
+                            newPath = normalizeVfsPath(newPath);
+                            
+                            if (existingPath.equals(newPath)) {
+                                isDuplicate = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!isDuplicate) {
+                        resources.add(newResource);
+                    }
+                }
             }
         }
         return resources;
+    }
+    
+    private String normalizeVfsPath(String path) {
+        // Remove VFS-specific components for path comparison
+        if (path.contains("/vfs/")) {
+            int vfsIndex = path.indexOf("/vfs/");
+            int contentsIndex = path.indexOf("/contents/", vfsIndex);
+            if (contentsIndex > -1) {
+                return path.substring(contentsIndex + "/contents/".length());
+            }
+        }
+        // Remove file:// prefix if present
+        if (path.startsWith("file://")) {
+            path = path.substring(7);
+        } else if (path.startsWith("file:")) {
+            path = path.substring(5);
+        }
+        return path;
     }
 
     // MIGRATION NOTE: Added missing search method for Liquibase 4.32.0 compatibility
     @Override
     public List<Resource> search(String path, boolean recursive) throws IOException {
+        LOG.infof("WildFlyCompositeResourceAccessor.search() called with path=%s, recursive=%s", path, recursive);
         List<Resource> resources = new ArrayList<>();
+        
         for (ResourceAccessor accessor : resourceAccessors) {
-            final List<Resource> list = accessor.search(path, recursive);
-            if (list != null) {
-                resources.addAll(list);
+            try {
+                final List<Resource> list = accessor.search(path, recursive);
+                LOG.infof("ResourceAccessor %s found %d resources for path %s", 
+                         accessor.getClass().getSimpleName(), list != null ? list.size() : 0, path);
+                if (list != null && !list.isEmpty()) {
+                    resources.addAll(list);
+                }
+            } catch (IOException e) {
+                // Log the error but continue with other accessors
+                // This is important for VFS URLs that some accessors can't handle
+                LOG.debugf("ResourceAccessor %s failed to search path %s: %s", 
+                          accessor.getClass().getSimpleName(), path, e.getMessage());
+            } catch (Exception e) {
+                // Catch any other exceptions to ensure we continue with other accessors
+                LOG.debugf("ResourceAccessor %s threw exception searching path %s: %s", 
+                          accessor.getClass().getSimpleName(), path, e.getMessage());
             }
         }
+        
+        LOG.infof("WildFlyCompositeResourceAccessor.search() total resources found: %d", resources.size());
+        LOG.infof("WildFlyCompositeResourceAccessor.search() returning %d resources", resources.size());
         return resources;
     }
 

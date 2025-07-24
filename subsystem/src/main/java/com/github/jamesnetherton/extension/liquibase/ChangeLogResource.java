@@ -69,6 +69,7 @@ public final class ChangeLogResource extends SimpleResourceDefinition {
     public static final SimpleAttributeDefinition VALUE = new SimpleAttributeDefinitionBuilder(ModelConstants.VALUE, ModelType.STRING)
         .addFlag(AttributeAccess.Flag.RESTART_NONE)
         .setAllowExpression(false)
+        .setRequired(false)
         .build();
 
     ChangeLogResource() {

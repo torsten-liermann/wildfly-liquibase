@@ -1,0 +1,50 @@
+<!--
+  #%L
+  wildfly-liquibase-subsystem
+  %%
+  Copyright (C) 2017 James Netherton
+  %%
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  
+       http://www.apache.org/licenses/LICENSE-2.0
+  
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  #L%
+  -->
+<subsystem xmlns="urn:com.github.jamesnetherton.liquibase:1.0">
+    <!-- Example of file-based changelog -->
+    <databaseChangeLog name="file-based-changelog"
+                       datasource="java:jboss/datasources/ExampleDS"
+                       contexts="production">
+    </databaseChangeLog>
+    
+    <!-- Example of inline XML changelog -->
+    <databaseChangeLog name="inline-xml-changelog"
+                       datasource="java:jboss/datasources/ExampleDS"
+                       contexts="test"><![CDATA[
+        <changeSet id="1" author="developer">
+            <createTable tableName="test_table">
+                <column name="id" type="bigint" autoIncrement="true">
+                    <constraints primaryKey="true" nullable="false"/>
+                </column>
+                <column name="name" type="varchar(255)">
+                    <constraints nullable="false"/>
+                </column>
+                <column name="created_date" type="timestamp" defaultValueDate="CURRENT_TIMESTAMP">
+                    <constraints nullable="false"/>
+                </column>
+            </createTable>
+        </changeSet>
+        <changeSet id="2" author="developer">
+            <addColumn tableName="test_table">
+                <column name="description" type="text"/>
+            </addColumn>
+        </changeSet>
+    ]]></databaseChangeLog>
+</subsystem>

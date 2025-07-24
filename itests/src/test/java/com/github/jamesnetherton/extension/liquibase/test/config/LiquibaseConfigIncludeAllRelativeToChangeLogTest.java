@@ -34,9 +34,10 @@ public class LiquibaseConfigIncludeAllRelativeToChangeLogTest extends LiquibaseT
     @Deployment
     public static Archive<?> deployment() {
         return ShrinkWrap.create(JavaArchive.class, "liquibase-config-include-all-relative-to-changelog-test.jar")
+            .addAsResource("configs/include/all/relative/jboss-all.xml", "META-INF/jboss-all.xml")
             .addAsResource("configs/include/all/relative/changelog-relative.xml", "/com/github/jamesnetherton/liquibase/changelog.xml")
-            .addAsResource("configs/include/all/relative/changelog-1.xml", "/com/github/jamesnetherton/liquibase/test/changes1.xml")
-            .addAsResource("configs/include/all/relative/changelog-2.xml", "/com/github/jamesnetherton/liquibase/test/changes2.xml");
+            .addAsResource("configs/include/all/relative/changelog-1.xml", "/com/github/jamesnetherton/liquibase/test/changelog-1.xml")
+            .addAsResource("configs/include/all/relative/changelog-2.xml", "/com/github/jamesnetherton/liquibase/test/changelog-2.xml");
     }
 
     @Test

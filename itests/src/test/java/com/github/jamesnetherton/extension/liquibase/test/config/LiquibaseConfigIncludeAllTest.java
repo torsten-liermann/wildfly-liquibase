@@ -34,9 +34,10 @@ public class LiquibaseConfigIncludeAllTest extends LiquibaseTestSupport {
     @Deployment
     public static Archive<?> deployment() {
         return ShrinkWrap.create(JavaArchive.class, "liquibase-config-include-all-test.jar")
+            .addAsResource("configs/include/all/jboss-all.xml", "META-INF/jboss-all.xml")
             .addAsResource("configs/include/all/changelog.xml", "changelog.xml")
-            .addAsResource("configs/include/all/changelog-1.xml", "/com/github/jamesnetherton/liquibase/test/changes1.xml")
-            .addAsResource("configs/include/all/changelog-2.xml", "/com/github/jamesnetherton/liquibase/test/changes2.xml");
+            .addAsResource("configs/include/all/changelog-1.xml", "/com/github/jamesnetherton/liquibase/test/changelog-1.xml")
+            .addAsResource("configs/include/all/changelog-2.xml", "/com/github/jamesnetherton/liquibase/test/changelog-2.xml");
     }
 
     @Test
