@@ -20,12 +20,13 @@
 package com.github.jamesnetherton.extension.liquibase;
 
 import com.github.jamesnetherton.extension.liquibase.service.ChangeLogModelService;
-import com.github.jamesnetherton.extension.liquibase.service.ServiceHelper;
 import org.jboss.as.controller.AbstractAddStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
 import org.jboss.as.controller.registry.Resource;
 import org.jboss.dmr.ModelNode;
+import org.jboss.msc.service.ServiceController;
+import org.jboss.msc.service.ServiceRegistry;
 
 final class ChangeLogAdd extends AbstractAddStepHandler {
 
@@ -41,21 +42,25 @@ final class ChangeLogAdd extends AbstractAddStepHandler {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
-        ChangeLogModelService service = ServiceHelper.getChangeLogModelUpdateService(context);
+        ChangeLogModelService service = getChangeLogModelService(context);
         service.createChangeLogModel(context, operation, model);
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void rollbackRuntime(OperationContext context, ModelNode operation, Resource resource) {
         super.rollbackRuntime(context, operation, resource);
-        ChangeLogModelService service = ServiceHelper.getChangeLogModelUpdateService(context);
+        ChangeLogModelService service = getChangeLogModelService(context);
         try {
             service.removeChangeLogModel(context, operation);
         } catch (OperationFailedException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    private ChangeLogModelService getChangeLogModelService(OperationContext context) {
+        ServiceRegistry serviceRegistry = context.getServiceRegistry(true);
+        ServiceController<?> controller = serviceRegistry.getRequiredService(ChangeLogModelService.getServiceName());
+        return (ChangeLogModelService) controller.getService();
     }
 }

@@ -20,7 +20,7 @@
 package com.github.jamesnetherton.extension.liquibase;
 
 import com.github.jamesnetherton.extension.liquibase.service.ChangeLogModelService;
-import com.github.jamesnetherton.extension.liquibase.service.ServiceHelper;
+import com.github.jamesnetherton.extension.liquibase.service.SubsystemServices;
 import org.jboss.as.controller.AbstractWriteAttributeHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -74,9 +74,8 @@ final class ChangeLogWrite extends AbstractWriteAttributeHandler<Object> {
     }
 
     // MIGRATION NOTE: Simplified updateRuntime to take only context and the operation to execute.
-    @SuppressWarnings("deprecation")
     private void updateRuntime(OperationContext context, ModelNode operationToExecute) throws OperationFailedException {
-        ChangeLogModelService service = ServiceHelper.getChangeLogModelUpdateService(context);
+        ChangeLogModelService service = SubsystemServices.getChangeLogModelService();
         if (service == null) {
             throw new OperationFailedException("ChangeLogModelService not available at path " + ChangeLogModelService.getServiceName());
         }

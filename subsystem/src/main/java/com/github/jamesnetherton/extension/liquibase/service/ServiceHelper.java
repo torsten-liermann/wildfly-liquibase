@@ -44,47 +44,9 @@ import java.util.function.Supplier; // MIGRATION NOTE: For modern service retrie
  */
 import liquibase.util.NetUtil;
 import org.jboss.as.controller.OperationContext;
-// MIGRATION NOTE: org.jboss.msc.service.Service is no longer directly used for installation helper.
-// MIGRATION NOTE: org.jboss.msc.service.ServiceBuilder is used directly by callers.
-import org.jboss.msc.service.ServiceController;
 import org.jboss.msc.service.ServiceName;
 
 public final class ServiceHelper {
-
-    // MIGRATION NOTE: This method uses deprecated ServiceController.getValue() API.
-    // Modern services should use Supplier/Consumer pattern via ServiceBuilder.requires()/provides().
-    // This method is retained for compatibility with legacy code that cannot be easily migrated.
-    @SuppressWarnings({"unchecked", "deprecation"})
-    @Deprecated
-    public static <T> T getService(OperationContext context, ServiceName serviceName, Class<T> type) {
-        ServiceController<?> controller = context.getServiceRegistry(false).getService(serviceName);
-        if (controller != null) {
-            try {
-                // MIGRATION NOTE: getValue() is deprecated and throws UnsupportedOperationException
-                // for services registered with the functional pattern.
-                return (T) controller.getValue();
-            } catch (UnsupportedOperationException e) {
-                // For ChangeLogModelService, we need to get it through the registry service
-                if (type == ChangeLogModelService.class) {
-                    // Return a new instance that can delegate to the registry service
-                    ServiceController<?> registryController = context.getServiceRegistry(false)
-                        .getService(ChangeLogConfigurationRegistryService.SERVICE_NAME);
-                    if (registryController != null) {
-                        try {
-                            ChangeLogConfigurationRegistryService registry = 
-                                (ChangeLogConfigurationRegistryService) registryController.getValue();
-                            return (T) new ChangeLogModelService(() -> registry);
-                        } catch (Exception ex) {
-                            LiquibaseLogger.ROOT_LOGGER.warn("Failed to get registry service", ex);
-                        }
-                    }
-                }
-                LiquibaseLogger.ROOT_LOGGER.warn("Service '{}' getValue() threw UnsupportedOperationException", serviceName);
-                return null;
-            }
-        }
-        return null;
-    }
 
     // MIGRATION NOTE: Modern alternative using Supplier pattern (preferred for new code)
     // This method should be used instead of getService() for new service implementations
@@ -100,25 +62,6 @@ public final class ServiceHelper {
         // This method returns null to encourage proper dependency injection patterns.
         LiquibaseLogger.ROOT_LOGGER.warn("Service '{}' access via modern pattern requires Supplier injection - returning null", serviceName);
         return null;
-    }
-
-
-    // MIGRATION NOTE: This method relies on ChangeLogModelService being registered in a way that it can be looked up.
-    // Modern pattern would be to inject ChangeLogModelService via Supplier in dependent services.
-    // This method is deprecated along with getValue() pattern but still used by management operations.
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    public static ChangeLogModelService getChangeLogModelUpdateService(OperationContext context) {
-        // MIGRATION NOTE: Use SubsystemServices to access the service instance
-        // This avoids the getValue() issue with services registered using the functional pattern
-        try {
-            return SubsystemServices.getChangeLogModelService();
-        } catch (IllegalStateException e) {
-            LiquibaseLogger.ROOT_LOGGER.warn("ChangeLogModelService not available via SubsystemServices", e);
-            // Fallback to old method for compatibility
-            ServiceName serviceName = ChangeLogModelService.getServiceName();
-            return getService(context, serviceName, ChangeLogModelService.class);
-        }
     }
     
     // MIGRATION NOTE: Modern alternative - use this in new service implementations

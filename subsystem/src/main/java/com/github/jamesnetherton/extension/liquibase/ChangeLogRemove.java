@@ -20,7 +20,7 @@
 package com.github.jamesnetherton.extension.liquibase;
 
 import com.github.jamesnetherton.extension.liquibase.service.ChangeLogModelService;
-import com.github.jamesnetherton.extension.liquibase.service.ServiceHelper;
+import com.github.jamesnetherton.extension.liquibase.service.SubsystemServices;
 import org.jboss.as.controller.AbstractRemoveStepHandler;
 import org.jboss.as.controller.OperationContext;
 import org.jboss.as.controller.OperationFailedException;
@@ -31,11 +31,10 @@ import org.jboss.dmr.ModelNode;
 final class ChangeLogRemove extends AbstractRemoveStepHandler {
 
     @Override
-    @SuppressWarnings("deprecation")
     protected void performRuntime(OperationContext context, ModelNode operation, ModelNode model) throws OperationFailedException {
         // MIGRATION NOTE: Assumes ServiceHelper.getChangeLogModelUpdateService(context) correctly retrieves the refactored ChangeLogModelService.
         // MIGRATION NOTE: 'model' here refers to the state of the resource *before* removal.
-        ChangeLogModelService service = ServiceHelper.getChangeLogModelUpdateService(context);
+        ChangeLogModelService service = SubsystemServices.getChangeLogModelService();
         if (service == null) {
             throw new OperationFailedException("ChangeLogModelService not available");
         }
