@@ -20,7 +20,7 @@
         <version.org.eclipse.egit.github>2.1.5</version.org.eclipse.egit.github>
         <version.org.jboss.arquillian>1.7.0.Final</version.org.jboss.arquillian>
         <version.org.jdom>2.0.6</version.org.jdom>
-        <version.org.liquibase>4.29.2</version.org.liquibase>
+        <version.org.liquibase>4.33.0</version.org.liquibase>
         <version.org.slf4j>1.7.36</version.org.slf4j>
         <version.org.snakeyaml>2.2</version.org.snakeyaml>
         <!-- WildFly/JBoss Versions (EAP 8.1 baseline: WildFly 35.0.1.Final) -->
