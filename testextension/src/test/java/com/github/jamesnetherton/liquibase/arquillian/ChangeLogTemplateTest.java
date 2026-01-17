@@ -19,6 +19,8 @@
  */
 package com.github.jamesnetherton.liquibase.arquillian;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import com.github.jamesnetherton.extension.liquibase.ChangeLogParserFactory;
 import java.io.File;
 import liquibase.changelog.ChangeLogParameters;
@@ -26,8 +28,7 @@ import liquibase.changelog.DatabaseChangeLog;
 import liquibase.exception.ChangeLogParseException;
 import liquibase.parser.ChangeLogParser;
 import liquibase.resource.FileSystemResourceAccessor;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Checks the validity of the change log template files
@@ -63,6 +64,6 @@ public class ChangeLogTemplateTest {
         }
 
         DatabaseChangeLog changeLog = parser.parse(file.getName(), new ChangeLogParameters(), new FileSystemResourceAccessor(file.getParentFile()));
-        Assert.assertNotNull(changeLog);
+        assertNotNull(changeLog);
     }
 }

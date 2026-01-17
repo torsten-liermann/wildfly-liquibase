@@ -22,19 +22,19 @@ package com.github.jamesnetherton.extension.liquibase.test.config;
 import com.github.jamesnetherton.liquibase.arquillian.LiquibaseTestSupport;
 import java.util.Arrays;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class LiquibaseFailOnErrorTest extends LiquibaseTestSupport {
 
     @Deployment
     public static Archive<?> deployment() {
-        return ShrinkWrap.create(JavaArchive.class, "liquibase-fail-on-error-test.jar")
+        return ShrinkWrap.create(WebArchive.class, "liquibase-fail-on-error-test.war")
                 .addAsResource("configs/fail/changelog.xml", "changelog.xml")
                 .addAsManifestResource("configs/fail/jboss-all.xml", "jboss-all.xml");
     }

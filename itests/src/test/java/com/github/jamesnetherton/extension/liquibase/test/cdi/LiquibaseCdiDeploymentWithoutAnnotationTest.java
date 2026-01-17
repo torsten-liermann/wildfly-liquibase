@@ -19,23 +19,20 @@
  */
 package com.github.jamesnetherton.extension.liquibase.test.cdi;
 
-import liquibase.integration.cdi.CDILiquibaseConfig;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import liquibase.integration.jakarta.cdi.CDILiquibaseConfig;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class LiquibaseCdiDeploymentWithoutAnnotationTest {
-
-    @Rule
-    public ExpectedException expected = ExpectedException.none();
 
     @Deployment
     public static Archive<?> deployment() {
@@ -45,7 +42,6 @@ public class LiquibaseCdiDeploymentWithoutAnnotationTest {
 
     @Test
     public void testLiquibaseCdiModuleDependencyNotAdded() {
-        expected.expect(NoClassDefFoundError.class);
-        new CDILiquibaseConfig();
+        assertThrows(NoClassDefFoundError.class, () -> new CDILiquibaseConfig());
     }
 }

@@ -22,16 +22,16 @@ package com.github.jamesnetherton.extension.liquibase.test.config;
 import com.github.jamesnetherton.liquibase.arquillian.LiquibaseTestSupport;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class LiquibaseMultipleConfigsSameDatasourceTest extends LiquibaseTestSupport {
 
     @ArquillianResource
@@ -53,7 +53,7 @@ public class LiquibaseMultipleConfigsSameDatasourceTest extends LiquibaseTestSup
     public void testMultipleConfigurationsWithSameDatasource() {
         try {
             deployer.deploy("invalid.jar");
-            Assert.fail("Expected DeploymentUnitProcessingException to be thrown");
+            Assertions.fail("Expected DeploymentUnitProcessingException to be thrown");
         } catch (Exception e) {
             // Ignore
         } finally {

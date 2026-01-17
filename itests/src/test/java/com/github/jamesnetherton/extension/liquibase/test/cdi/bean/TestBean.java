@@ -19,7 +19,7 @@
  */
 package com.github.jamesnetherton.extension.liquibase.test.cdi.bean;
 
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 @Named
 public class TestBean {

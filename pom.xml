@@ -16,35 +16,39 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- Versions -->
-        <version.junit>4.13.1</version.junit>
+        <version.junit>5.10.0</version.junit>
         <version.org.eclipse.egit.github>2.1.5</version.org.eclipse.egit.github>
-        <version.org.jboss.arquillian>1.6.0.Final</version.org.jboss.arquillian>
+        <version.org.jboss.arquillian>1.7.0.Final</version.org.jboss.arquillian>
         <version.org.jdom>2.0.6</version.org.jdom>
-        <version.org.liquibase>4.8.0</version.org.liquibase>
-        <version.org.slf4j>1.7.30</version.org.slf4j>
-        <version.org.snakeyaml>1.31</version.org.snakeyaml>
-        <version.org.wildfly>26.0.1.Final</version.org.wildfly>
-        <version.org.wildfly.arquillian>3.0.1.Final</version.org.wildfly.arquillian>
-        <version.org.wildfly.core>18.0.4.Final</version.org.wildfly.core>
-        <version.org.wildfly.common>1.5.2.Final</version.org.wildfly.common>
+        <version.org.liquibase>4.29.2</version.org.liquibase>
+        <version.org.slf4j>1.7.36</version.org.slf4j>
+        <version.org.snakeyaml>2.2</version.org.snakeyaml>
+        <!-- WildFly/JBoss Versions (EAP 8.1 baseline: WildFly 35.0.1.Final) -->
+        <version.org.wildfly>35.0.1.Final</version.org.wildfly>
+        <version.org.wildfly.arquillian>5.0.0.Final</version.org.wildfly.arquillian>
+        <version.org.wildfly.core>27.0.1.Final</version.org.wildfly.core>
+        <version.org.wildfly.common>1.6.0.Final</version.org.wildfly.common>
+        <version.wildfly.galleon-plugins>7.3.1.Final</version.wildfly.galleon-plugins>
+        <version.jakarta.ee>10.0.0</version.jakarta.ee>
 
         <!-- Plugin versions -->
-        <version.antrun.plugin>3.0.0</version.antrun.plugin>
-        <version.assembly.plugin>3.2.0</version.assembly.plugin>
-        <version.compiler.plugin>3.8.1</version.compiler.plugin>
-        <version.dependency.plugin>3.1.2</version.dependency.plugin>
-        <version.exec.plugin>1.6.0</version.exec.plugin>
+        <version.antrun.plugin>3.1.0</version.antrun.plugin>
+        <version.assembly.plugin>3.7.1</version.assembly.plugin>
+        <version.compiler.plugin>3.14.0</version.compiler.plugin>
+        <version.dependency.plugin>3.8.1</version.dependency.plugin>
+        <version.exec.plugin>3.5.0</version.exec.plugin>
         <version.gmaven.plugin>2.1.1</version.gmaven.plugin>
-        <version.gpg.plugin>1.6</version.gpg.plugin>
-        <version.license.plugin>2.0.0</version.license.plugin>
-        <version.impsort.plugin>1.4.1</version.impsort.plugin>
-        <version.javadoc.plugin>3.2.0</version.javadoc.plugin>
-        <version.release.plugin>3.0.0-M1</version.release.plugin>
-        <version.galleon.plugin>4.2.8.Final</version.galleon.plugin>
-        <version.resources.plugin>3.2.0</version.resources.plugin>
-        <version.source.plugin>3.2.0</version.source.plugin>
-        <version.surefire.plugin>3.0.0-M5</version.surefire.plugin>
-        <version.wildfly.galleon.plugin>5.2.0.Final</version.wildfly.galleon.plugin>
+        <version.gpg.plugin>3.2.7</version.gpg.plugin>
+        <version.license.plugin>2.4.0</version.license.plugin>
+        <version.impsort.plugin>1.12.0</version.impsort.plugin>
+        <version.javadoc.plugin>3.11.2</version.javadoc.plugin>
+        <version.release.plugin>3.1.1</version.release.plugin>
+        <version.galleon.plugin>6.0.4.Final</version.galleon.plugin>
+        <version.resources.plugin>3.3.1</version.resources.plugin>
+        <version.source.plugin>3.3.1</version.source.plugin>
+        <version.surefire.plugin>3.5.3</version.surefire.plugin>
+        <version.wildfly.galleon.plugin>7.3.1.Final</version.wildfly.galleon.plugin>
+        <version.wildfly.plugin>5.1.0.Final</version.wildfly.plugin>
     </properties>
 
     <scm>
@@ -124,13 +128,28 @@
     <modules>
         <module>subsystem</module>
         <module>feature-pack</module>
-        <module>distro</module>
         <module>testextension</module>
         <module>itests</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+            <!-- WildFly BOMs -->
+            <dependency>
+                <groupId>org.wildfly.bom</groupId>
+                <artifactId>wildfly-ee</artifactId>
+                <version>${version.org.wildfly}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly</groupId>
+                <artifactId>wildfly-ee-feature-pack-galleon-shared</artifactId>
+                <version>${version.org.wildfly}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- Arquillian -->
             <dependency>
                 <groupId>org.jboss.arquillian</groupId>
@@ -147,17 +166,24 @@
                 <version>${version.org.jdom}</version>
             </dependency>
 
-            <!-- Junit -->
+            <!-- JUnit 5 -->
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter</artifactId>
                 <version>${version.junit}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit.vintage</groupId>
+                <artifactId>junit-vintage-engine</artifactId>
+                <version>${version.junit}</version>
+                <scope>test</scope>
             </dependency>
 
             <!-- Liquibase -->
             <dependency>
                 <groupId>org.liquibase</groupId>
-                <artifactId>liquibase-cdi</artifactId>
+                <artifactId>liquibase-cdi-jakarta</artifactId>
                 <version>${version.org.liquibase}</version>
             </dependency>
             <dependency>
@@ -170,6 +196,23 @@
                         <artifactId>logback-classic</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <!-- Liquibase runtime dependencies -->
+            <dependency>
+                <groupId>com.opencsv</groupId>
+                <artifactId>opencsv</artifactId>
+                <version>5.9</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>4.4</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>1.12.0</version>
             </dependency>
 
             <!-- SLF4J -->
@@ -191,14 +234,7 @@
                 <version>${version.org.snakeyaml}</version>
             </dependency>
 
-            <!-- WildFly -->
-            <dependency>
-                <groupId>org.wildfly</groupId>
-                <artifactId>wildfly-parent</artifactId>
-                <version>${version.org.wildfly}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+            <!-- WildFly Dist -->
             <dependency>
                 <groupId>org.wildfly</groupId>
                 <artifactId>wildfly-dist</artifactId>
@@ -206,11 +242,18 @@
                 <type>tar.gz</type>
             </dependency>
 
-            <!-- WildFly Arquillian-->
+            <!-- WildFly Arquillian -->
             <dependency>
                 <groupId>org.wildfly.arquillian</groupId>
                 <artifactId>wildfly-arquillian-container-managed</artifactId>
                 <version>${version.org.wildfly.arquillian}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.wildfly.arquillian</groupId>
+                <artifactId>wildfly-arquillian-container-remote</artifactId>
+                <version>${version.org.wildfly.arquillian}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -230,8 +273,8 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${version.compiler.plugin}</version>
                     <configuration>
-                        <source>11</source>
-                        <target>11</target>
+                        <source>17</source>
+                        <target>17</target>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -311,7 +354,7 @@
                 <plugin>
                     <groupId>org.wildfly.galleon-plugins</groupId>
                     <artifactId>wildfly-galleon-maven-plugin</artifactId>
-                    <version>${version.wildfly.galleon.plugin}</version>
+                    <version>${version.wildfly.galleon-plugins}</version>
                     <dependencies>
                         <dependency>
                             <groupId>org.wildfly.core</groupId>
@@ -426,6 +469,12 @@
                     </plugin>
                 </plugins>
             </build>
+        </profile>
+        <profile>
+            <id>distro</id>
+            <modules>
+                <module>distro</module>
+            </modules>
         </profile>
         <profile>
             <id>examples</id>

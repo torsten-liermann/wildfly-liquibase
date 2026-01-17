@@ -7,9 +7,9 @@ import liquibase.resource.ResourceAccessor;
 
 import java.sql.SQLException;
 
-import javax.annotation.Resource;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
+import jakarta.annotation.Resource;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 import javax.sql.DataSource;
 
 @ApplicationScoped

@@ -52,6 +52,7 @@ public final class ChangeLogDefinitionEnricher implements TestEnricher {
 
     @Override
     public Object[] resolve(Method method) {
-        return null;
+        // Return empty array instead of null for JUnit 5 / Arquillian compatibility
+        return new Object[method.getParameterTypes().length];
     }
 }

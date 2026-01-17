@@ -19,29 +19,20 @@
  */
 package com.github.jamesnetherton.liquibase.arquillian;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import org.jboss.arquillian.container.test.spi.RemoteLoadableExtension;
 import org.jboss.arquillian.test.spi.TestEnricher;
-import org.jboss.as.arquillian.service.DependenciesProvider;
-import org.jboss.modules.ModuleIdentifier;
 
-public final class LiquibaseRemoteLoadableExtension implements RemoteLoadableExtension, DependenciesProvider {
-
-    private static final Set<ModuleIdentifier> DEPENDENCIES = new LinkedHashSet<>();
-    static {
-        DEPENDENCIES.add(ModuleIdentifier.create("com.github.jamesnetherton.extension.liquibase"));
-        DEPENDENCIES.add(ModuleIdentifier.create("org.liquibase.core"));
-    }
+/**
+ * Remote extension for Liquibase Arquillian integration.
+ *
+ * Note: Module dependencies (org.liquibase.core, org.liquibase.cdi) are added
+ * automatically by {@code LiquibaseDependenciesProcessor} in the subsystem.
+ * The deprecated DependenciesProvider interface was removed in WildFly Arquillian 5.x.
+ */
+public final class LiquibaseRemoteLoadableExtension implements RemoteLoadableExtension {
 
     @Override
     public void register(ExtensionBuilder builder) {
         builder.service(TestEnricher.class, ChangeLogDefinitionEnricher.class);
-    }
-
-    @Override
-    public Set<ModuleIdentifier> getDependencies() {
-        return Collections.unmodifiableSet(DEPENDENCIES);
     }
 }

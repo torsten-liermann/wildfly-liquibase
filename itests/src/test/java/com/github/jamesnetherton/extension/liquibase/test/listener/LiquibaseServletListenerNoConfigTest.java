@@ -22,16 +22,16 @@ package com.github.jamesnetherton.extension.liquibase.test.listener;
 import com.github.jamesnetherton.liquibase.arquillian.LiquibaseTestSupport;
 import org.jboss.arquillian.container.test.api.Deployer;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class LiquibaseServletListenerNoConfigTest extends LiquibaseTestSupport {
 
     private static final String NO_CONFIG_WEB_XML = "liquibase-servlet-listener-no-config-test.war";
@@ -51,7 +51,7 @@ public class LiquibaseServletListenerNoConfigTest extends LiquibaseTestSupport {
             deployer.deploy(NO_CONFIG_WEB_XML);
             deployer.undeploy(NO_CONFIG_WEB_XML);
         } catch (Exception e){
-            Assert.fail("Expected deployment to be successful but it failed: " + e.getMessage());
+            Assertions.fail("Expected deployment to be successful but it failed: " + e.getMessage());
         }
     }
 }

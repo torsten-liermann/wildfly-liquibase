@@ -21,25 +21,37 @@ package com.github.jamesnetherton.extension.liquibase.test.config;
 
 import com.github.jamesnetherton.liquibase.arquillian.ChangeLogDefinition;
 import com.github.jamesnetherton.liquibase.arquillian.LiquibaseTestSupport;
+import com.github.jamesnetherton.liquibase.arquillian.ResourceLocation;
 import java.util.Collections;
+import liquibase.util.NetUtil;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.spec.WebArchive;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class LiquibaseHostExcludesTest extends LiquibaseTestSupport {
 
-    @ChangeLogDefinition(name = "changelog.xml", fileName = "changelog.xml")
+    @ChangeLogDefinition(name = "changelog.xml", fileName = "changelog.xml", resourceLocation = ResourceLocation.CLASSPATH)
     private String tableName;
 
     @Deployment
     public static Archive<?> deployment() {
-        return ShrinkWrap.create(JavaArchive.class, "liquibase-host-excludes-test.jar")
-                .addAsManifestResource("configs/host/jboss-all-host-excludes.xml", "jboss-all.xml");
+        // Generate jboss-all.xml dynamically with actual hostname
+        String hostName = NetUtil.getLocalHostName();
+        String jbossAllXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<jboss xmlns=\"urn:jboss:1.0\">\n" +
+                "    <liquibase xmlns=\"urn:com.github.jamesnetherton.liquibase:1.0\" changelog=\"changelog.xml\">\n" +
+                "        <host-excludes>" + hostName + "</host-excludes>\n" +
+                "    </liquibase>\n" +
+                "</jboss>\n";
+
+        return ShrinkWrap.create(WebArchive.class, "liquibase-host-excludes-test.war")
+                .addAsManifestResource(new StringAsset(jbossAllXml), "jboss-all.xml");
     }
 
     @Test

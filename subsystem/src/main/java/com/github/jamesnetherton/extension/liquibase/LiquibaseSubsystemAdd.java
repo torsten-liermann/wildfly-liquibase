@@ -66,6 +66,8 @@ class LiquibaseSubsystemAdd extends AbstractBoottimeAddStepHandler {
         try {
             Thread.currentThread().setContextClassLoader(Liquibase.class.getClassLoader());
             Scope.setScopeManager(new WildFlyScopeManager());
+            // Trigger root scope creation in WildFlyScopeManager
+            Scope.getCurrentScope();
         } finally {
             Thread.currentThread().setContextClassLoader(oldTCCL);
         }

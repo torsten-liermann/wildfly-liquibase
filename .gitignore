@@ -6,3 +6,4 @@
 *.iml
 *.log
 target
+.flattened-pom.xml

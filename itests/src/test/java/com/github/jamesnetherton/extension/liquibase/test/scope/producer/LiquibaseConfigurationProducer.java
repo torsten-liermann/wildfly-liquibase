@@ -19,13 +19,13 @@
  */
 package com.github.jamesnetherton.extension.liquibase.test.scope.producer;
 
+import jakarta.annotation.Resource;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Produces;
 import java.sql.SQLException;
-import javax.annotation.Resource;
-import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.inject.Produces;
 import javax.sql.DataSource;
-import liquibase.integration.cdi.CDILiquibaseConfig;
-import liquibase.integration.cdi.annotations.LiquibaseType;
+import liquibase.integration.jakarta.cdi.CDILiquibaseConfig;
+import liquibase.integration.jakarta.cdi.annotations.LiquibaseType;
 import liquibase.resource.ClassLoaderResourceAccessor;
 import liquibase.resource.ResourceAccessor;
 

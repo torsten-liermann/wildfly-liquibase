@@ -36,6 +36,7 @@ public final class ChangeLogConfiguration {
     private String labels;
     private String name;
     private String path;
+    private String basePath; // Physical base directory for FileSystemResourceAccessor
     private ClassLoader classLoader;
     private ConfigurationOrigin origin;
 
@@ -53,6 +54,14 @@ public final class ChangeLogConfiguration {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public String getBasePath() {
+        return basePath;
+    }
+
+    public void setBasePath(String basePath) {
+        this.basePath = basePath;
     }
 
     public String getDeployment() {
@@ -158,6 +167,11 @@ public final class ChangeLogConfiguration {
             return format;
         }
 
+        // If no definition is available, we can't determine format from content
+        if (this.definition == null) {
+            return ChangeLogFormat.UNKNOWN;
+        }
+
         // Else try to make some assumptions based on the change log content
         if (this.definition.contains("<databaseChangeLog") || this.definition.contains("<changeSet")) {
             return ChangeLogFormat.XML;
@@ -170,6 +184,69 @@ public final class ChangeLogConfiguration {
         } else {
             return ChangeLogFormat.UNKNOWN;
         }
+    }
+
+    /**
+     * Get the classpath-relative path of the changelog.
+     * This extracts the resource path from the VFS path for proper relative include resolution.
+     * VFS paths can look like:
+     * - /content/deployment.jar/com/example/changelog.xml
+     * - /content/deployment.war/WEB-INF/lib/lib.jar/com/example/changelog.xml
+     * - /content/deployment.war/WEB-INF/changelog.xml
+     * This method returns: com/example/changelog.xml (or just filename for WEB-INF)
+     */
+    public String getClasspathPath() {
+        if (this.path == null) {
+            return getFileName();
+        }
+
+        // Remove the /content/<deployment>/ prefix to get the classpath-relative path
+        String classpathPath = this.path;
+
+        // Handle /content/<deployment>/ prefix
+        if (deployment != null && classpathPath.contains("/content/" + deployment)) {
+            int idx = classpathPath.indexOf("/content/" + deployment);
+            classpathPath = classpathPath.substring(idx + "/content/".length() + deployment.length());
+        }
+
+        // Also handle /contents/ marker (VFS temp path format)
+        int contentsIdx = classpathPath.indexOf("/contents/");
+        if (contentsIdx >= 0) {
+            classpathPath = classpathPath.substring(contentsIdx + "/contents/".length());
+        }
+
+        // Handle nested JARs in WAR deployments (WEB-INF/lib/<jar-name>.jar/)
+        // The classpath path should be the path INSIDE the nested JAR
+        int jarIdx = classpathPath.indexOf(".jar/");
+        if (jarIdx >= 0) {
+            classpathPath = classpathPath.substring(jarIdx + ".jar/".length());
+        }
+
+        // Remove leading slash
+        if (classpathPath.startsWith("/")) {
+            classpathPath = classpathPath.substring(1);
+        }
+
+        // For files in WEB-INF/classes/, strip the prefix since ClassLoader
+        // looks up these resources without it
+        if (classpathPath.startsWith("WEB-INF/classes/")) {
+            classpathPath = classpathPath.substring("WEB-INF/classes/".length());
+        }
+        // For files directly in WEB-INF/ (not in classes), they're not on classpath
+        // Return just the filename for FileSystemResourceAccessor lookup via basePath
+        else if (classpathPath.startsWith("WEB-INF/")) {
+            int lastSlash = classpathPath.lastIndexOf('/');
+            if (lastSlash >= 0) {
+                return classpathPath.substring(lastSlash + 1);
+            }
+        }
+
+        // If we couldn't extract a valid path, fall back to filename
+        if (classpathPath.isEmpty()) {
+            return getFileName();
+        }
+
+        return classpathPath;
     }
 
     public static Builder builder() {
@@ -205,6 +282,7 @@ public final class ChangeLogConfiguration {
         private String labels;
         private String name;
         private String path;
+        private String basePath;
         private ClassLoader classLoader;
         private ConfigurationOrigin origin;
 
@@ -258,6 +336,11 @@ public final class ChangeLogConfiguration {
             return this;
         }
 
+        public Builder basePath(String basePath) {
+            this.basePath = basePath;
+            return this;
+        }
+
         public Builder classLoader(ClassLoader classLoader) {
             this.classLoader = classLoader;
             return this;
@@ -307,6 +390,7 @@ public final class ChangeLogConfiguration {
             configuration.setName(this.name);
             configuration.setOrigin(this.origin);
             configuration.setPath(this.path);
+            configuration.setBasePath(this.basePath);
             return configuration;
         }
 

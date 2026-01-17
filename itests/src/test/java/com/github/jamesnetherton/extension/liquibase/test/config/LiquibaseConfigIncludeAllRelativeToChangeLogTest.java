@@ -21,14 +21,14 @@ package com.github.jamesnetherton.extension.liquibase.test.config;
 
 import com.github.jamesnetherton.liquibase.arquillian.LiquibaseTestSupport;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class LiquibaseConfigIncludeAllRelativeToChangeLogTest extends LiquibaseTestSupport {
 
     @Deployment

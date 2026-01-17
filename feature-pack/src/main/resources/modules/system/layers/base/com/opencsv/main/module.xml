@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<module xmlns="urn:jboss:module:1.5" name="com.opencsv">
+    <resources>
+        <artifact name="${com.opencsv:opencsv}"/>
+    </resources>
+    <dependencies>
+        <module name="org.apache.commons.lang3"/>
+        <module name="org.apache.commons.collections4"/>
+        <module name="org.apache.commons.text"/>
+    </dependencies>
+</module>

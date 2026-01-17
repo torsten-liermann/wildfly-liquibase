@@ -28,12 +28,28 @@
         </dependency>
         <dependency>
             <groupId>org.liquibase</groupId>
-            <artifactId>liquibase-cdi</artifactId>
+            <artifactId>liquibase-cdi-jakarta</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Liquibase runtime dependencies -->
+        <dependency>
+            <groupId>com.opencsv</groupId>
+            <artifactId>opencsv</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>
@@ -45,14 +61,18 @@
                 <artifactId>wildfly-galleon-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>galleon-pack-build</id>
+                        <id>feature-pack-build</id>
                         <goals>
                             <goal>build-feature-pack</goal>
                         </goals>
-                        <phase>compile</phase>
+                        <phase>prepare-package</phase>
                     </execution>
                 </executions>
                 <configuration>
+                    <release-name>Wildfly EE Liquibase</release-name>
+                    <task-properties>
+                        <product.release.version>${project.version}</product.release.version>
+                    </task-properties>
                     <fork-embedded>true</fork-embedded>
                 </configuration>
             </plugin>

@@ -20,6 +20,7 @@
 package com.github.jamesnetherton.extension.liquibase.test.deployment;
 
 import com.github.jamesnetherton.liquibase.arquillian.LiquibaseTestSupport;
+import jakarta.enterprise.concurrent.ManagedExecutorService;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -28,10 +29,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.naming.InitialContext;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -39,14 +39,14 @@ import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.exporter.ZipExporter;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class LiquibaseConcurrentDeploymentTest extends LiquibaseTestSupport {
 
     private static final String TMP_DIR = System.getProperty("java.io.tmpdir");
@@ -80,7 +80,7 @@ public class LiquibaseConcurrentDeploymentTest extends LiquibaseTestSupport {
             .addAsResource("deployment/concurrent/changelog-3.xml", "changelog.xml");
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeClass() {
         Archive[] archives = new Archive[] {concurrentDeployment1(), concurrentDeployment2(), concurrentDeployment3()};
         for (Archive<?> archive : archives) {
@@ -89,14 +89,14 @@ public class LiquibaseConcurrentDeploymentTest extends LiquibaseTestSupport {
         }
     }
 
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         for (Map.Entry<String, String> entry : DATASOURCES.entrySet()) {
             addDataSource(entry.getKey(), entry.getValue());
         }
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         try {
             for (Map.Entry<String, String> entry : DATASOURCES.entrySet()) {
@@ -130,7 +130,7 @@ public class LiquibaseConcurrentDeploymentTest extends LiquibaseTestSupport {
         }
 
         try {
-            Assert.assertTrue("Gave up waiting for deployments", latch.await(30, TimeUnit.SECONDS));
+            Assertions.assertTrue(latch.await(30, TimeUnit.SECONDS), "Gave up waiting for deployments");
 
             for (Map.Entry<String, String> entry : DATASOURCES.entrySet()) {
                 assertTableModified("table_" + entry.getValue(), DEFAULT_COLUMNS, "java:jboss/datasources/" + entry.getKey());

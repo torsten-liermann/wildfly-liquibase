@@ -24,22 +24,22 @@ import com.github.jamesnetherton.extension.liquibase.test.jpa.model.Order;
 import com.github.jamesnetherton.extension.liquibase.test.jpa.producer.LiquibaseConfigurationProducer;
 import com.github.jamesnetherton.liquibase.arquillian.LiquibaseTestSupport;
 import com.github.jamesnetherton.liquibase.arquillian.TestExtensionUtils;
-import javax.annotation.Resource;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-import javax.transaction.UserTransaction;
+import jakarta.annotation.Resource;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.UserTransaction;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.shrinkwrap.api.Archive;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.asset.EmptyAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-@RunWith(Arquillian.class)
-@Ignore("https://github.com/jamesnetherton/wildfly-liquibase/issues/42")
+@ExtendWith(ArquillianExtension.class)
+@Disabled("https://github.com/jamesnetherton/wildfly-liquibase/issues/42")
 public class LiquibaseHibernateJPAIntegrationTest extends LiquibaseTestSupport {
 
     @PersistenceContext

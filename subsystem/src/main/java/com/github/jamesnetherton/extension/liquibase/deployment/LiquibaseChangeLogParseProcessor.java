@@ -101,26 +101,49 @@ public class LiquibaseChangeLogParseProcessor implements DeploymentUnitProcessor
 
             BuilderCollection builderCollection = deploymentUnit.getAttachment(LiquibaseConstants.LIQUIBASE_CHANGELOG_BUILDERS);
 
+            // Debug logging for jboss-all.xml builder collection
+            if (builderCollection != null) {
+                LiquibaseLogger.ROOT_LOGGER.info("Found BuilderCollection with {} builders from jboss-all.xml", builderCollection.getBuilders().size());
+            } else {
+                LiquibaseLogger.ROOT_LOGGER.info("No BuilderCollection found from jboss-all.xml for deployment {}", deploymentUnit.getName());
+            }
+
             for (VirtualFile virtualFile : changeLogFiles) {
                 File file = virtualFile.getPhysicalFile();
                 String changeLogDefinition = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
                 String dataSource = parseDataSource(virtualFile, deploymentUnit.getName(), module.getClassLoader());
 
+                // For standalone changelog deployments, use deployment name (which has extension)
+                // instead of physical file name (which may be 'content' in content repository)
+                String changeLogName;
+                if (deploymentUnit.getName().matches(LiquibaseConstants.LIQUIBASE_CHANGELOG_PATTERN)) {
+                    changeLogName = deploymentUnit.getName();
+                } else {
+                    changeLogName = file.getName();
+                }
+
                 Builder builder;
                 if (builderCollection == null) {
                     builder = ChangeLogConfiguration.builder();
                 } else {
-                    builder = builderCollection.getOrCreateBuilder(file.getName());
+                    builder = builderCollection.getOrCreateBuilder(changeLogName);
                 }
 
-                ChangeLogConfiguration configuration = builder.name(file.getName())
+                LiquibaseLogger.ROOT_LOGGER.info("Looking up builder for changeLogName={}", changeLogName);
+
+                ChangeLogConfiguration configuration = builder.name(changeLogName)
                     .path(virtualFile.getPathName())
+                    .basePath(file.getParent())
                     .deployment(deploymentUnit.getName())
                     .definition(changeLogDefinition)
                     .dataSource(dataSource)
                     .classLoader(module.getClassLoader())
                     .deploymentOrigin()
                     .build();
+
+                LiquibaseLogger.ROOT_LOGGER.info("Built configuration: name={}, hostExcludes={}, hostIncludes={}, contexts={}, labels={}",
+                    configuration.getName(), configuration.getHostExcludes(), configuration.getHostIncludes(),
+                    configuration.getContexts(), configuration.getLabels());
 
                 deploymentUnit.addToAttachmentList(LiquibaseConstants.LIQUIBASE_CHANGELOGS, configuration);
             }
@@ -164,13 +187,20 @@ public class LiquibaseChangeLogParseProcessor implements DeploymentUnitProcessor
                 throw new DeploymentUnitProcessingException("Unable to find a suitable change log parser for " + file.getName());
             }
 
+            // Determine changelog location based on deployment type and file location
             String changeLogLocation;
-            if (runtimeName.endsWith(".war")) {
-                changeLogLocation = file.getName();
-            } else if (runtimeName.endsWith(".xml")) {
+            String classpathPath = configuration.getClasspathPath();
+            String vfsPath = file.getPathName();
+            if (runtimeName.endsWith(".xml")) {
+                // Standalone XML changelog deployments
                 changeLogLocation = "content";
+            } else if (vfsPath.contains("/WEB-INF/") && !vfsPath.contains("/WEB-INF/classes/") && !vfsPath.contains(".jar/")) {
+                // Changelog directly in WEB-INF (not in classes or lib/*.jar)
+                // These are NOT on classpath, use filename for FileSystemResourceAccessor
+                changeLogLocation = file.getName();
             } else {
-                changeLogLocation = file.getPhysicalFile().getAbsolutePath();
+                // Changelog on classpath (WEB-INF/classes, JAR, etc.) - use classpath path
+                changeLogLocation = classpathPath;
             }
 
             DatabaseChangeLog changeLog = parser.parse(changeLogLocation, new ChangeLogParameters(), compositeResourceAccessor);

@@ -7,9 +7,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,10 +23,11 @@ import com.github.jamesnetherton.extension.liquibase.ChangeLogConfiguration;
 import com.github.jamesnetherton.extension.liquibase.LiquibaseLogger;
 import com.github.jamesnetherton.extension.liquibase.resource.WildFlyResourceAccessor;
 import com.github.jamesnetherton.extension.liquibase.scope.WildFlyScopeManager;
+import java.io.File;
 import java.sql.SQLException;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import javax.sql.DataSource;
 import liquibase.Contexts;
 import liquibase.LabelExpression;
@@ -37,31 +38,36 @@ import liquibase.exception.LiquibaseException;
 import liquibase.resource.CompositeResourceAccessor;
 import liquibase.resource.FileSystemResourceAccessor;
 import liquibase.resource.ResourceAccessor;
-import org.jboss.msc.service.AbstractService;
 import org.jboss.msc.service.ServiceName;
 import org.jboss.msc.service.StartContext;
 import org.jboss.msc.service.StartException;
+import org.jboss.msc.service.StopContext;
 
 /**
  * Service which executes a Liquibase change log based on the provided {@link ChangeLogConfiguration}.
  */
-public final class ChangeLogExecutionService extends AbstractService<ChangeLogExecutionService> {
+public final class ChangeLogExecutionService {
 
     private static final AtomicInteger COUNTER = new AtomicInteger();
     private final ChangeLogConfiguration configuration;
+    private final Consumer<ChangeLogExecutionService> serviceConsumer;
+    private final Supplier<DataSource> dataSourceSupplier;
 
-    public ChangeLogExecutionService(ChangeLogConfiguration configuration) {
+    public ChangeLogExecutionService(ChangeLogConfiguration configuration,
+                                     Consumer<ChangeLogExecutionService> serviceConsumer,
+                                     Supplier<DataSource> dataSourceSupplier) {
         this.configuration = configuration;
+        this.serviceConsumer = serviceConsumer;
+        this.dataSourceSupplier = dataSourceSupplier;
     }
 
-    @Override
     public void start(StartContext context) throws StartException {
         executeChangeLog(configuration);
+        serviceConsumer.accept(this);
     }
 
-    @Override
-    public ChangeLogExecutionService getValue() throws IllegalStateException {
-        return this;
+    public void stop(StopContext context) {
+        serviceConsumer.accept(null);
     }
 
     public void executeChangeLog(ChangeLogConfiguration configuration) {
@@ -73,22 +79,57 @@ public final class ChangeLogExecutionService extends AbstractService<ChangeLogEx
         JdbcConnection connection = null;
         Liquibase liquibase = null;
 
+        // Set TCCL BEFORE any Liquibase classes are loaded to ensure ServiceLoader finds log services
         final ClassLoader oldTCCL = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(configuration.getClassLoader());
         try {
-            ResourceAccessor resourceAccessor = new CompositeResourceAccessor(new FileSystemResourceAccessor(), new WildFlyResourceAccessor(configuration));
+            // Determine if we need FileSystemResourceAccessor for WEB-INF files
+            // WEB-INF files (not in classes or lib/*.jar) are not on classpath
+            boolean needsFileSystemAccessor = configuration.getBasePath() != null
+                && configuration.getPath() != null
+                && configuration.getPath().contains("/WEB-INF/")
+                && !configuration.getPath().contains("/WEB-INF/classes/")
+                && !configuration.getPath().contains(".jar/");
 
-            InitialContext initialContext = new InitialContext();
-            DataSource datasource = (DataSource) initialContext.lookup(configuration.getDataSource());
+            ResourceAccessor resourceAccessor;
+            if (needsFileSystemAccessor) {
+                File[] basePaths = new File[] { new File(configuration.getBasePath()) };
+                resourceAccessor = new CompositeResourceAccessor(new FileSystemResourceAccessor(basePaths), new WildFlyResourceAccessor(configuration));
+            } else {
+                resourceAccessor = new WildFlyResourceAccessor(configuration);
+            }
+
+            DataSource datasource = dataSourceSupplier.get();
+            if (datasource == null) {
+                throw new IllegalStateException("DataSource is not available for changelog: " + configuration.getFileName());
+            }
             connection = new JdbcConnection(datasource.getConnection());
 
             Contexts contexts = new Contexts(configuration.getContexts());
             LabelExpression labelExpression = new LabelExpression(configuration.getLabels());
 
-            LiquibaseLogger.ROOT_LOGGER.info(String.format("Starting execution of %s changelog %s", configuration.getOrigin(), configuration.getFileName()));
-            Thread.currentThread().setContextClassLoader(configuration.getClassLoader());
-            liquibase = new Liquibase(configuration.getFileName(), resourceAccessor, connection);
+            // Use appropriate path for changelog lookup:
+            // - For subsystem origin or standalone deployments: use fileName (has correct extension)
+            // - For WAR/JAR deployments: use classpath path for proper relative include resolution
+            String changeLogPath;
+            if (configuration.isSubsystemOrigin()) {
+                // Subsystem changelogs have their definition in memory, use fileName
+                changeLogPath = configuration.getFileName();
+            } else if (needsFileSystemAccessor) {
+                // WEB-INF files (not on classpath) use fileName with FileSystemResourceAccessor
+                changeLogPath = configuration.getFileName();
+            } else if (configuration.getPath() != null && configuration.getPath().contains("/data/content/")) {
+                // Standalone changelog deployments stored in content repository
+                // Use fileName which has the correct extension
+                changeLogPath = configuration.getFileName();
+            } else {
+                // Standard classpath deployments: use classpath path for proper relative includes
+                changeLogPath = configuration.getClasspathPath();
+            }
+            LiquibaseLogger.ROOT_LOGGER.info(String.format("Starting execution of %s changelog %s (path: %s)", configuration.getOrigin(), configuration.getFileName(), changeLogPath));
+            liquibase = new Liquibase(changeLogPath, resourceAccessor, connection);
             liquibase.update(contexts, labelExpression);
-        } catch (NamingException | LiquibaseException | SQLException e) {
+        } catch (LiquibaseException | SQLException e) {
             if (configuration.isFailOnError()) {
                 throw new IllegalStateException(e);
             } else {
